@@ -97,7 +97,11 @@ int ROSA_Delay(TimerTick ticks)
 	
 	//Save newWakeTime to the task's WakingTime attribute (executing task's ID is saved in a global variable)
 	//Put the task into the Waiting Queue
+<<<<<<< HEAD
+	//Call the scheduler
+=======
 	//Call the scheduler (ex: yield)
+>>>>>>> 8be64dd6ec8c7bb1abe4b2c2fedbec81211d5307
 }
 
 int ROSA_DelayUntil(TimerTick * lastWakeTime, TimerTick period)
@@ -119,7 +123,11 @@ int ROSA_DelayUntil(TimerTick * lastWakeTime, TimerTick period)
 	//Save delayEnd to the task's WakingTime attribute (executing task's ID is saved in a global variable)
 	//Put the task into the Waiting Queue
 	//Call the scheduler	
+<<<<<<< HEAD
+	*lastWakeTime = SystemTime	//Calculate new lastWakeTime value
+=======
 	*lastWakeTime = SystemTime;	//Calculate new lastWakeTime value
+>>>>>>> 8be64dd6ec8c7bb1abe4b2c2fedbec81211d5307
 }
 
 TimerTick ROSA_getTimerTicks(void)
