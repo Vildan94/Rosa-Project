@@ -1,32 +1,10 @@
-/*****************************************************************************
-
-                 ,//////,   ,////    ,///' /////,
-                ///' ./// ///'///  ///,    ,, //
-               ///////,  ///,///   '/// //;''//,
-             ,///' '///,'/////',/////'  /////'/;,
-
-    Copyright 2010 Marcus Jansson <mjansson256@yahoo.se>
-
-    This file is part of ROSA - Realtime Operating System for AVR32.
-
-    ROSA is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    ROSA is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with ROSA.  If not, see <http://www.gnu.org/licenses/>.
-*****************************************************************************/
 /* Tab size: 4 */
 
 #include "rosa_config.h"
 #include "drivers/delay.h"
 #include "kernel/rosa_int.h"
+#include <limits.h>
+
 
 /***********************************************************
  * timerInterruptHandler
@@ -39,11 +17,17 @@ void timerISR(void)
 {
 	int sr;
 	volatile avr32_tc_t * tc = &AVR32_TC;
-
+	
+	//increments the SystemTime, resets before overflow
+	if(SystemTime+1 != TIMERTICK_MAXVAL)
+		SystemTime++;
+	else
+		SystemTime = 1;
+	
 	//Read the timer status register to determine if this is a valid interrupt
 	sr = tc->channel[0].sr;
 	if(sr & AVR32_TC_CPCS_MASK)
-		ROSA_yieldFromISR();
+		ROSA_yieldFromISR();	//This saves context, calls the scheduler, switches over to next
 }
 
 
@@ -56,7 +40,6 @@ void timerISR(void)
  **********************************************************/
 int timerPeriodSet(unsigned int ms)
 {
-
 	int rc, prescale;
 	int f[] = { 2, 8, 32, 128 };
 	//FOSC0 / factor_prescale * time[s];
@@ -65,4 +48,58 @@ int timerPeriodSet(unsigned int ms)
 	timerPrescaleSet(prescale);
 	timerRCSet(rc);
 	return rc * prescale / FOSC0;
+}
+
+
+
+bool ROSA_Delay(TimerTick ticks)
+{
+	TimerTick newWakeTime;
+	TimerTick timeUntilOverflow;
+	
+	//CRITICAL SECTION
+	timeUntilOverflow = TIMERTICK_MAXVAL - SystemTime;
+	
+	if(ticks > timeUntilOverflow){
+		newWakeTime = ticks - timeUntilOverflow;
+	}
+	else{
+		newWakeTime = SystemTime + ticks;	//add delay-length to current time
+	}
+	//END OF CRITICAL SECTION
+	
+	EXECTASK->waitT = newWakeTime;	//Save wake time into task's attribute
+	
+	Insert_Waiting();	//Put the task into the Waiting Queue
+	
+	ROSA_yield();		//Call the scheduler (ex: yield)
+	
+	return true;
+}
+
+bool ROSA_DelayUntil(TimerTick * lastWakeTime, TimerTick period)
+{
+	TimerTick newWakeTime;
+	TimerTick timeUntilOverflow;
+	
+	//CRITICAL SECTION
+	timeUntilOverflow = TIMERTICK_MAXVAL - *lastWakeTime;
+	
+	if(timeUntilOverflow < period){
+		newWakeTime = period - timeUntilOverflow;
+	}
+	else{
+		newWakeTime = *lastWakeTime + period;	//add delay-length value to current time
+	}
+	//END OF CRITICAL SECTION
+	
+	EXECTASK->waitT = newWakeTime;	//Save waking time in the task's attribute
+	
+	Insert_Waiting();				//Put the task into the Waiting Queue
+	
+	ROSA_yield();					//Call the scheduler	
+	
+	*lastWakeTime = SystemTime;		//When task gets to execute again, calculate new lastWakeTime value before exciting
+	
+	return true;
 }
