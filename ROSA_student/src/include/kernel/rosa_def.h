@@ -53,25 +53,14 @@ typedef struct tcb_record_t {
 	int savesr;				//The current status register
 	int retaddr;			//The return address
 	int savereg[15];		//The CPU registers
-} tcb;
-
-
-typedef struct task {
-    struct tcb_record_t * nexttcb;
-	char id[NAMESIZE];		//The task id/name
-	void (*staddr) (void);	//Start address
-	int priority;			//Task priority
-	int handleID;			//The task handle ID
-	TimerTick wait;			//Waiting time
-	TimerTick waitSem;	    //Waiting time for semaphore
-	int *dataarea;			//The stack data area
-	int datasize;			//The stack size
-	int *saveusp;			//The current stack position
-	int SAVER0;				//Temporary work register
-	int SAVER1;				//Temporary work register
-	int savesr;				//The current status register
-	int retaddr;			//The return address
-	int savereg[15];		//The CPU registers
+	
+	
+	//VILDANOVO!!!
+	int priority;
+	int handleID;
+	unsigned long long waitUntil;
+	unsigned long long waitSemaphore;
+	
 } tcb;
 
 #endif /* rosa_def_H_ */

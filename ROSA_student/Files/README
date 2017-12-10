@@ -1,0 +1,30 @@
+====================================
+ROSA
+Realtime Operating system for AVR32
+====================================
+
+Content:
+=========
+	License
+	Compiling
+	Programming EVK1100
+
+
+License
+==========
+The License for ROSA is found in the file COPYING.
+
+Compiling
+==========
+ROSA will compile by typing:
+	make
+in the rosa directory.
+
+Programming EVK1100
+====================
+Typing
+	make program
+in the rosa/ directory will give you what you need.
+
+
+
