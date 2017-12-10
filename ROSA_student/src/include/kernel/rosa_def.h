@@ -28,7 +28,12 @@
 #define rosa_def_H_
 
 #include "rosa_config.h"
-
+typedef unsigned long long TimerTick;
+//#define TimerTick unsigned long long
+extern int ROSA_TaskCreate(char ID[name_size], void *functionPtr, int stackSize, int priority);
+extern bool ROSA_TaskDelete(int HandleId );
+extern bool ROSA_TaskSusspend(int HandleId);
+extern bool ROSA_TaskResume(int HandleId);
 #ifndef NULL
 #define NULL 0
 #endif
@@ -43,6 +48,10 @@
  **********************************************************/
 typedef struct tcb_record_t {
 	struct tcb_record_t * nexttcb;
+	int priority;			//The task priority
+	int handleID;			//The task handle ID
+	TimerTick waitUntil;    //Waiting time
+	TimerTick waitSemaphore;//Waiting time for semaphore
 	char id[NAMESIZE];		//The task id/name
 	void (*staddr) (void);	//Start address
 	int *dataarea;			//The stack data area
@@ -53,14 +62,8 @@ typedef struct tcb_record_t {
 	int savesr;				//The current status register
 	int retaddr;			//The return address
 	int savereg[15];		//The CPU registers
-	
-	
-	//VILDANOVO!!!
-	int priority;
-	int handleID;
-	unsigned long long waitUntil;
-	unsigned long long waitSemaphore;
-	
 } tcb;
+
+
 
 #endif /* rosa_def_H_ */
