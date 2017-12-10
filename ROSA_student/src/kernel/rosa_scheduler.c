@@ -1,22 +1,17 @@
 #include "kernel/rosa_scheduler.h"
-//#include "rosa_int.h"
-//#include "rosa_ker.h"
 #include "stdlib.h"
+#include "stdbool.h"
+#include "kernel/rosa_tim.h"
 
-//ALEXs part!!!
-unsigned long long SystemTime;
-
-extern tcb *TaskHandleID[21];//Array for the HandleIDs used by Task Create function when returning ID
+//tcb *TaskHandleID[21];//Array for the HandleIDs used by Task Create function when returning ID
 // Index represents the ID!!!
 tcb *EXECTASK=NULL;//Currently executing task
 tcb *READY=NULL;
 tcb *BLOCKED=NULL;
 tcb *WAITING=NULL;
 tcb *SUSPENDED=NULL;
-tcb Idle_tcb;
+//tcb Idle_tcb;
 
-
-#define TIMERTICK_MAXVAL ULLONG_MAX
 #define IDLE_STACK_SIZE 0x40
 #define IDLE_PRIORITY 0
 #define HIGHEST_PRIORITY 21

@@ -1,30 +1,3 @@
-/*****************************************************************************
-
-                 ///////,   .////    .///' /////,
-                ///' ./// ///'///  ///,     '///
-               ///////'  ///,///   '/// //;';//,
-             ,///' ////,'/////',/////'  /////'/;,
-
-    Copyright 2010 Marcus Jansson <mjansson256@yahoo.se>
-
-    This file is part of ROSA - Realtime Operating System for AVR32.
-
-    ROSA is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    ROSA is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with ROSA.  If not, see <http://www.gnu.org/licenses/>.
-*****************************************************************************/
-/* Tab size: 4 */
-
-//Kernel includes
 #include "kernel/rosa_def.h"
 #include "kernel/rosa_ext.h"
 #include "kernel/rosa_ker.h"
@@ -39,38 +12,10 @@
 #include "stdlib.h"
 
 #define MAX 21
-tcb * handleID[MAX]={NULL}; // Initialize all array's fields to NULL
-//int counter = 1;
-//handleID * array;
+tcb * TaskHandleID[MAX]={NULL}; // Initialize all array's fields to NULL
 
-/***********************************************************
- * TCBLIST
- *
- * Comment:
- * 	Global variables that contain the list of TCB's that
- * 	have been installed into the kernel with ROSA_tcbInstall()
- **********************************************************/
-tcb * TCBLIST;
+bool ROSA_TaskResume(int HandleId);
 
-/***********************************************************
- * EXECTASK
- *
- * Comment:
- * 	Global variables that contain the current running TCB and other queues
- **********************************************************/
-tcb * EXECTASK;
-tcb * READY=NULL;
-tcb * BLOCKED=NULL;
-tcb * WAITING=NULL;
-tcb * SUSPENDED=NULL;
-
-/***********************************************************
- * ROSA_init
- *
- * Comment:
- * 	Initialize the ROSA system
- *
- **********************************************************/
 void ROSA_init(void)
 {
 	//Do initialization of I/O drivers
@@ -79,24 +24,10 @@ void ROSA_init(void)
 	joystickInit();								//Joystick
 	potInit();									//Potentiometer
 	usartInit(USART, &usart_options, FOSC0);	//Serial communication
-
-	//Start with empty TCBLIST and no EXECTASK.
 	TCBLIST = NULL;
 	EXECTASK = NULL;
-
-	//Initialize the timer to 100 ms period.
-	//...
-	//timerInit(100);
-	//...
 }
-
-/***********************************************************
- * ROSA_tcbCreate
- *
- * Comment:
- * 	Create the TCB with correct values.
- *
- **********************************************************/
+ 
 void ROSA_tcbCreate(tcb * tcbTask, char tcbName[NAMESIZE], void *tcbFunction, int * tcbStack, int tcbStackSize)
 {
 	int i;
@@ -126,34 +57,9 @@ void ROSA_tcbCreate(tcb * tcbTask, char tcbName[NAMESIZE], void *tcbFunction, in
 	contextInit(tcbTask);
 }
 
-	//int createArray(){
-	//
-	//handleID * array = NULL;
-	//array = (handleID *)malloc(( 21 * sizeof(handleID *)));
-	//
-	//return array;
-	//
-	//}
-
-//int *array(){
-	//
-	//handleID * array = NULL;
-	//array = (handleID *)malloc ((21 * sizeof(handleID *)));
-	//return array;
-//}
-
-//int *createArray(){
-//
-	//int i;
-	//for(i = 0; i < max; i++){
-		//handleID[i]=NULL;
-	//}
-	//
-//}
-int ROSA_TaskCreate (char ID[name_size], void *functionPtr, int stackSize, int priority){
+int ROSA_TaskCreate (char ID[NAMESIZE], void *functionPtr, int stackSize, int priority){
 	tcb *new_tcb = NULL; int i, j=1;
-    int stackData[stackSize];
-	
+    int stackData[stackSize];	
 	
 	if ((!priority < 0) && (!priority >= 20)) {											    // priority must be between 0 to 21 not including these two numbers								
 		
@@ -163,7 +69,7 @@ int ROSA_TaskCreate (char ID[name_size], void *functionPtr, int stackSize, int p
 			return -1;
 			
 		}
-		for (i=0; i < name_size; i++){												     	// The task id/name created for debugging purposes
+		for (i=0; i < NAMESIZE; i++){												     	// The task id/name created for debugging purposes
 			new_tcb ->id[i] = ID[i];
 		}
 		new_tcb->priority = priority;														// The task priority
@@ -181,9 +87,9 @@ int ROSA_TaskCreate (char ID[name_size], void *functionPtr, int stackSize, int p
 		// HANDLE ID
 		while (j < MAX){
 			// If it is empty																	// Check if some array's field is empty or not
-			if (handleID[j]==NULL){
+			if (TaskHandleID[j]==NULL){
 				 new_tcb->handleID = j;	
-				 handleID[j] = new_tcb;
+				 TaskHandleID[j] = new_tcb;
 				 break;
 			 }
 			else 
@@ -201,14 +107,15 @@ int ROSA_TaskCreate (char ID[name_size], void *functionPtr, int stackSize, int p
 }
 
 bool ROSA_TaskDelete(int HandleId){
-	tcb *TEMP = READY; int j=1;
+	tcb *TEMP= READY;
+	int j=1;
 	//int temp = 0;                               // for return value
 	// If executing task tries to delete itself 
 	if (EXECTASK->handleID == HandleId){
 		
 		while(j < MAX){
-			if (handleID [j] == HandleId){
-				handleID[j] = NULL;
+			if (j == HandleId){
+				TaskHandleID[j] = NULL;
 				break;
 			}
 			else{
@@ -226,8 +133,8 @@ bool ROSA_TaskDelete(int HandleId){
 	while (TEMP != NULL ){		
 		if (TEMP->handleID == HandleId){
 			while(j < MAX){
-				if (handleID [j] == HandleId){
-				handleID[j] = NULL;
+				if (j== HandleId){
+				TaskHandleID[j] = NULL;
 				break;
 				}
 				else{
@@ -247,8 +154,8 @@ bool ROSA_TaskDelete(int HandleId){
 	while (TEMP != NULL ){
 		if (TEMP->handleID == HandleId){
 			while(j < MAX){
-				if (handleID [j] == HandleId){
-					handleID[j] = NULL;
+				if (j == HandleId){
+					TaskHandleID[j] = NULL;
 					break;
 				}
 				else{
@@ -268,8 +175,8 @@ bool ROSA_TaskDelete(int HandleId){
 	while (TEMP != NULL ){
 		if (TEMP->handleID == HandleId){
 			while(j < MAX){
-				if (handleID [j] == HandleId){
-					handleID[j] = NULL;
+				if (j == HandleId){
+					TaskHandleID[j] = NULL;
 					break;
 				}
 				else{
@@ -289,8 +196,8 @@ bool ROSA_TaskDelete(int HandleId){
 		while (TEMP != NULL ){
 			if (TEMP->handleID == HandleId){
 				while(j < MAX){
-					if (handleID [j] == HandleId){
-						handleID[j] = NULL;
+					if (j == HandleId){
+						TaskHandleID[j] = NULL;
 						break;
 					}
 					else{
@@ -306,38 +213,17 @@ bool ROSA_TaskDelete(int HandleId){
 			TEMP = TEMP->nexttcb;
 		}
 		return false;
-		
-		// Returning value
-//	if (temp = 0) {
-//		return false; 
-//	}
-//	else {
-//		return true;
-//	}
-		
 }
 
 bool ROSA_TaskSusspend(int HandleId){
-	
 	Insert_Supsended(HandleId);
-	return true;
-	
+	return true;	
 }
 bool ROSA_TaskResume(int HandleId){
-	
 	Resume_Suspended(HandleId);
 	return true;
-	
 }
 
-
-/***********************************************************
- * ROSA_tcbInstall
- *
- * Comment:
- * 	Install the TCB into the TCBLIST.
- *
- **********************************************************/
 void ROSA_tcbInstall(tcb * tcbTask)
 {
 	tcb * tcbTmp;
@@ -355,85 +241,5 @@ void ROSA_tcbInstall(tcb * tcbTask)
 		}
 		tcbTmp->nexttcb = tcbTask;			//Install tcb last in the list
 		tcbTask->nexttcb = TCBLIST;			//Make the list circular
-	}
-}
-
-
-void Resume_Suspended(int handleID){
-	//It needs return type (FALSE) if user tries to resume a task that isn't suspended
-	tcb *Temp=SUSPENDED, *Previous=SUSPENDED;
-	while(Temp!=NULL){
-		if(Temp->handleID==handleID){
-			Previous->nexttcb=Temp->nexttcb;
-			Insert_Ready(Temp);
-			return;
-		}
-		Previous=Temp;
-		Temp=Temp->nexttcb;
-	}
-}
-void Insert_Supsended(int handleID){//Order of the elements doesn't matter
-	tcb *Temp=READY, *Previous=READY;
-	
-	//EXECUTING MOVE
-	if(EXECTASK->handleID==handleID){//the executing task wants to suspend itself
-		EXECTASK->nexttcb=SUSPENDED;
-		SUSPENDED=EXECTASK;
-		ROSA_yield();
-	}
-	
-	//READY SEARCH
-	if(Temp!=NULL && Temp->handleID==handleID){//If it is the first element
-		READY=Temp->nexttcb;
-		Temp->nexttcb=SUSPENDED;
-		SUSPENDED=Temp;
-	}
-	while(Temp->nexttcb!=NULL){//The rest of the elements
-		if(Temp->nexttcb->handleID==handleID){
-			Temp=Temp->nexttcb;
-			Previous->nexttcb=Temp->nexttcb;
-			Temp->nexttcb=SUSPENDED;
-			SUSPENDED=Temp;
-			return;
-		}
-		Temp=Temp->nexttcb;
-	}
-	
-	//WAITING QUEUE SEARCH
-	Temp=WAITING;
-	Previous=WAITING;
-	if(Temp!=NULL && Temp->handleID==handleID){//If it is the first element
-		WAITING=Temp->nexttcb;
-		Temp->nexttcb=SUSPENDED;
-		SUSPENDED=Temp;
-	}
-	while(Temp->nexttcb!=NULL){//The rest of the elements
-		if(Temp->nexttcb->handleID==handleID){
-			Temp=Temp->nexttcb;
-			Previous->nexttcb=Temp->nexttcb;
-			Temp->nexttcb=SUSPENDED;
-			SUSPENDED=Temp;
-			return;
-		}
-		Temp=Temp->nexttcb;
-	}
-	
-	//BLOCKED SEARCH
-	Temp=BLOCKED;
-	Previous=BLOCKED;
-	if(Temp!=NULL && Temp->handleID==handleID){//If it is the first element
-		BLOCKED=Temp->nexttcb;
-		Temp->nexttcb=SUSPENDED;
-		SUSPENDED=Temp;
-	}
-	while(Temp->nexttcb!=NULL){//The rest of the elements
-		if(Temp->nexttcb->handleID==handleID){
-			Temp=Temp->nexttcb;
-			Previous->nexttcb=Temp->nexttcb;
-			Temp->nexttcb=SUSPENDED;
-			SUSPENDED=Temp;
-			return;
-		}
-		Temp=Temp->nexttcb;
 	}
 }

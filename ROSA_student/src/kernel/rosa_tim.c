@@ -1,17 +1,11 @@
-/* Tab size: 4 */
-
 #include "rosa_config.h"
 #include "drivers/delay.h"
 #include "kernel/rosa_int.h"
+#include "kernel/rosa_scheduler.h"
+#include "stdlib.h"
 #include <limits.h>
 
-
-/***********************************************************
- * timerInterruptHandler
- *
- * Comment:
- * 	This is the basic timer interrupt service routine.
- **********************************************************/
+//SystemTime=0;
 __attribute__((__interrupt__))
 void timerISR(void)
 {
@@ -30,16 +24,7 @@ void timerISR(void)
 		ROSA_yieldFromISR();	//This saves context, calls the scheduler, switches over to next
 }
 
-
-/***********************************************************
- * timerPeriodSet
- *
- * Comment:
- * 	Set the timer period to 'ms' milliseconds.
- *
- **********************************************************/
-int timerPeriodSet(unsigned int ms)
-{
+int timerPeriodSet(unsigned int ms){
 	int rc, prescale;
 	int f[] = { 2, 8, 32, 128 };
 	//FOSC0 / factor_prescale * time[s];
@@ -49,8 +34,6 @@ int timerPeriodSet(unsigned int ms)
 	timerRCSet(rc);
 	return rc * prescale / FOSC0;
 }
-
-
 
 bool ROSA_Delay(TimerTick ticks)
 {
@@ -68,9 +51,9 @@ bool ROSA_Delay(TimerTick ticks)
 	}
 	//END OF CRITICAL SECTION
 	
-	EXECTASK->waitT = newWakeTime;	//Save wake time into task's attribute
+	EXECTASK->waitUntil = newWakeTime;	//Save wake time into task's attribute
 	
-	Insert_Waiting();	//Put the task into the Waiting Queue
+	Insert_Waiting(EXECTASK);	//Put the task into the Waiting Queue
 	
 	ROSA_yield();		//Call the scheduler (ex: yield)
 	
@@ -93,9 +76,9 @@ bool ROSA_DelayUntil(TimerTick * lastWakeTime, TimerTick period)
 	}
 	//END OF CRITICAL SECTION
 	
-	EXECTASK->waitT = newWakeTime;	//Save waking time in the task's attribute
+	EXECTASK->waitUntil = newWakeTime;	//Save waking time in the task's attribute
 	
-	Insert_Waiting();				//Put the task into the Waiting Queue
+	Insert_Waiting(EXECTASK);				//Put the task into the Waiting Queue
 	
 	ROSA_yield();					//Call the scheduler	
 	
