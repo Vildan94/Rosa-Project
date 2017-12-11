@@ -5,6 +5,9 @@
  ***********************************************************/
 semaphoreHandler semaphoreHandlerTable[MAX_SEM] = {NULL};
 
+// OBSERVE SCHEDULUREE OR TASK SHOULD PUT THE EXEC-TASK IN WAITING STATE WHEN RETURN FALSE OR NO?
+// SHOULD I DO IT HERE? I MEAN SOMETIMES I DO BLOCK AND THEN RETURN FALSE HOW THE SCHEDULAR NOW WHEN TO NOT AND WHEN TO DO?
+
 /***********************************************************
  handleID ROSA SemaphoreBinaryCreate()
  ***********************************************************/
@@ -137,6 +140,10 @@ bool ROSA SemaphoreBinaryTake(handleID ID, timerTick ticksToWait)
 		return false;
 	}
 	else if (semaphoreHandlerTable[ID] == NULL) // If semaphore handler does not exist 
+	{
+		return false;
+	}
+	else if (semaphoreHandlerTable[ID]->isBinary == 0) // Semaphore is IPCP
 	{
 		return false;
 	}
@@ -292,7 +299,6 @@ bool ROSA SemaphoreIPCPTake (handleID ID, timerTick ticksToWait)
 		{
 			if (semaphoreHandlerTable[i] == NULL) // Hop and check next index
 			{
-				i = i + 1;
 				while (semaphoreHandlerTable[i] =! NULL) // Iterate until you find an address
 				{
 					i++
@@ -326,7 +332,7 @@ bool ROSA SemaphoreIPCPTake (handleID ID, timerTick ticksToWait)
 					ROSA_yield();		//Call the scheduler (ex: yield)
 					
 					// 
-					return false;
+					return false;  // WHAT HAPPENS HERE? SHOULD NOT THE SCHEDULAR PUT IT IN BLOCK STATE WHEN GETTING REUTRN FALSE? 
 				}
 			}
 			i++;
@@ -402,5 +408,35 @@ bool ROSA SemaphoreIPCPTake (handleID ID, timerTick ticksToWait)
  ***********************************************************/
 bool ROSA SemaphoreIPCPRelease (handleID ID)
 {
+	
+	if (semaphoreHandlerTable == NULL)	// The table does not exist
+	{
+		return false;
+	}
+	else if (semaphoreHandlerTable[ID] == NULL) // If semaphore handler does not exist
+	{
+		return false;
+	}
+	else if (semaphoreHandlerTable[ID]->isBinary == 1) // Semaphore is binary
+	{
+		return false;
+	}
+	else if (semaphoreHandlerTable[ID]->state == Taken)	// If semaphore handler is taken then make it free
+	{
+		interruptDisable(void);  // CRITICAL SECTION
+		
+		EXECTASK->priority = semaphoreHandlerTable[ID]->taskPriority; // But first change back to old priority 
+		semaphoreHandlerTable[ID]->taskPriority = 0; // Reset
+		
+		semaphoreHandlerTable[ID]->state = Free;	// Change the state to free
+		
+		interruptEnable(void);	// END CRITICAL SECTION
+		
+		return true;
+	}
+	else(semaphoreHandlerTable[ID]->state == Free) // Semaphore handler is already free
+	{
+		return true;
+	}
 	
 }
