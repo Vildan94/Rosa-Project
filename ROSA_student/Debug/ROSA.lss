@@ -21,29 +21,29 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
   8 .comment      00000030  00000000  00000000  00001010  2**0
                   CONTENTS, READONLY
-  9 .debug_aranges 00000128  00000000  00000000  00001040  2**3
+  9 .debug_aranges 00000180  00000000  00000000  00001040  2**3
                   CONTENTS, READONLY, DEBUGGING
- 10 .debug_pubnames 00000280  00000000  00000000  00001168  2**0
+ 10 .debug_pubnames 0000039d  00000000  00000000  000011c0  2**0
                   CONTENTS, READONLY, DEBUGGING
- 11 .debug_info   00001331  00000000  00000000  000013e8  2**0
+ 11 .debug_info   0000180e  00000000  00000000  0000155d  2**0
                   CONTENTS, READONLY, DEBUGGING
- 12 .debug_abbrev 0000042c  00000000  00000000  00002719  2**0
+ 12 .debug_abbrev 000005da  00000000  00000000  00002d6b  2**0
                   CONTENTS, READONLY, DEBUGGING
- 13 .debug_line   000018f0  00000000  00000000  00002b45  2**0
+ 13 .debug_line   00001fef  00000000  00000000  00003345  2**0
                   CONTENTS, READONLY, DEBUGGING
- 14 .debug_frame  00000294  00000000  00000000  00004438  2**2
+ 14 .debug_frame  00000384  00000000  00000000  00005334  2**2
                   CONTENTS, READONLY, DEBUGGING
- 15 .debug_str    000005f2  00000000  00000000  000046cc  2**0
+ 15 .debug_str    00000791  00000000  00000000  000056b8  2**0
                   CONTENTS, READONLY, DEBUGGING
- 16 .debug_loc    00000387  00000000  00000000  00004cbe  2**0
+ 16 .debug_loc    000004df  00000000  00000000  00005e49  2**0
                   CONTENTS, READONLY, DEBUGGING
- 17 .debug_macinfo 0037b3eb  00000000  00000000  00005045  2**0
+ 17 .debug_macinfo 0045ad6e  00000000  00000000  00006328  2**0
                   CONTENTS, READONLY, DEBUGGING
  18 .appstack     00001000  0000e000  0000e000  00000000  2**0
                   ALLOC
  19 .stack        00001000  0000f000  0000f000  00000000  2**0
                   ALLOC
- 20 .debug_ranges 000000e8  00000000  00000000  00380430  2**0
+ 20 .debug_ranges 00000138  00000000  00000000  00461096  2**0
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .reset:
@@ -57,34 +57,16 @@ Disassembly of section .reset:
 Disassembly of section .text:
 
 80000008 <main>:
-#include "drivers/led.h"
-#include "drivers/delay.h"
-#include "drivers/usart.h"
-#include "rosa_config.h"
-
-int main(void){	
 80000008:	eb cd 40 80 	pushm	r7,lr
 8000000c:	1a 97       	mov	r7,sp
-	
-	while(1);
 8000000e:	c0 08       	rjmp	8000000e <main+0x6>
 
 80000010 <ROSA_yieldFromISR>:
-
-void contextSaveFromISR(void);
-void contextRestoreFromISR(void);
-
-void ROSA_yieldFromISR(void)
-{
 80000010:	eb cd 40 80 	pushm	r7,lr
 80000014:	1a 97       	mov	r7,sp
-	contextSaveFromISR();	  //Save the task context
 80000016:	f0 1f 00 05 	mcall	80000028 <ROSA_yieldFromISR+0x18>
-	scheduler();			  //Find next task to execute
 8000001a:	f0 1f 00 05 	mcall	8000002c <ROSA_yieldFromISR+0x1c>
-	contextRestoreFromISR();  //...and switch over to it.
 8000001e:	f0 1f 00 05 	mcall	80000030 <ROSA_yieldFromISR+0x20>
-}
 80000022:	e3 cd 80 80 	ldm	sp++,r7,pc
 80000026:	00 00       	add	r0,r0
 80000028:	80 00       	ld.sh	r0,r0[0x0]
@@ -95,33 +77,13 @@ void ROSA_yieldFromISR(void)
 80000032:	07 b8       	ld.ub	r8,r3[0x3]
 
 80000034 <scheduler>:
-}
-bool ChangeIdleTaskPriorityToLowest(void){
-	TaskHandleID[Idle_tcb.handleID]->priority=IDLE_PRIORITY;
-	return true;
-}
-void scheduler(void){
 80000034:	eb cd 40 80 	pushm	r7,lr
 80000038:	1a 97       	mov	r7,sp
-//When calling Delay it puts a task in waiting queue same for other functions
-//Suspend task, resume task, semaphore block etc...
-	
-	interruptDisable();
 8000003a:	f0 1f 00 07 	mcall	80000054 <scheduler+0x20>
-	
-	//All functions take appropriate task from queue and move it in the Ready queue in a sorted manner
-	Check_Blocked_Queue(); 
 8000003e:	f0 1f 00 07 	mcall	80000058 <scheduler+0x24>
-	Check_Waiting_Queue();
 80000042:	f0 1f 00 07 	mcall	8000005c <scheduler+0x28>
-	
-	Chose_A_Task_Frome_Ready_Queue();//If a task is the same prio it goes at the end of the tasks with same prio's
 80000046:	f0 1f 00 07 	mcall	80000060 <scheduler+0x2c>
-	//This is done for Round Robin scheduling
-	
-	interruptEnable();
 8000004a:	f0 1f 00 07 	mcall	80000064 <scheduler+0x30>
-}
 8000004e:	e3 cd 80 80 	ldm	sp++,r7,pc
 80000052:	00 00       	add	r0,r0
 80000054:	80 00       	ld.sh	r0,r0[0x0]
@@ -136,37 +98,22 @@ void scheduler(void){
 80000066:	07 6a       	ld.uh	r10,--r3
 
 80000068 <Check_Blocked_Queue>:
-
-
-void Check_Blocked_Queue(){
 80000068:	eb cd 40 80 	pushm	r7,lr
 8000006c:	1a 97       	mov	r7,sp
-	
-}
 8000006e:	e3 cd 80 80 	ldm	sp++,r7,pc
 80000072:	d7 03       	nop
 
 80000074 <Check_Waiting_Queue>:
-			return;
-		}
-		Temp=Temp->nexttcb;
-	}
-}
-void Check_Waiting_Queue(){
 80000074:	eb cd 40 80 	pushm	r7,lr
 80000078:	1a 97       	mov	r7,sp
 8000007a:	20 1d       	sub	sp,4
-	tcb *Temp=WAITING;
 8000007c:	49 c8       	lddpc	r8,800000ec <Check_Waiting_Queue+0x78>
 8000007e:	70 08       	ld.w	r8,r8[0x0]
 80000080:	ef 48 ff fc 	st.w	r7[-4],r8
-	if(WAITING==NULL)
 80000084:	49 a8       	lddpc	r8,800000ec <Check_Waiting_Queue+0x78>
 80000086:	70 08       	ld.w	r8,r8[0x0]
 80000088:	58 08       	cp.w	r8,0
 8000008a:	c2 c0       	breq	800000e2 <Check_Waiting_Queue+0x6e>
-		return;
-	if(Temp->waitUntil>SystemTime) //If tasks waiting time is bigger than systems time then no task will migrate to ready queue
 8000008c:	ee f8 ff fc 	ld.w	r8,r7[-4]
 80000090:	f0 ea 00 0c 	ld.d	r10,r8[12]
 80000094:	49 78       	lddpc	r8,800000f0 <Check_Waiting_Queue+0x7c>
@@ -174,27 +121,16 @@ void Check_Waiting_Queue(){
 8000009a:	10 3a       	cp.w	r10,r8
 8000009c:	f2 0b 13 00 	cpc	r11,r9
 800000a0:	e0 88 00 10 	brls	800000c0 <Check_Waiting_Queue+0x4c>
-		return;
 800000a4:	c2 08       	rjmp	800000e4 <Check_Waiting_Queue+0x70>
-	while(Temp!=NULL && Temp->waitUntil<=SystemTime){//If task EXSISTS and its waiting time is lower or equal then
-		Insert_Ready(Temp);//Move it to the ready queue
 800000a6:	ee fc ff fc 	ld.w	r12,r7[-4]
 800000aa:	f0 1f 00 13 	mcall	800000f4 <Check_Waiting_Queue+0x80>
-		WAITING=Temp->nexttcb;//Unchain it from the list (since it is always the first element) and assign ptr of the next task to the WAITING
 800000ae:	ee f8 ff fc 	ld.w	r8,r7[-4]
 800000b2:	70 09       	ld.w	r9,r8[0x0]
 800000b4:	48 e8       	lddpc	r8,800000ec <Check_Waiting_Queue+0x78>
 800000b6:	91 09       	st.w	r8[0x0],r9
-		Temp=WAITING;//Change the temp node to the beginning of the queue
 800000b8:	48 d8       	lddpc	r8,800000ec <Check_Waiting_Queue+0x78>
 800000ba:	70 08       	ld.w	r8,r8[0x0]
 800000bc:	ef 48 ff fc 	st.w	r7[-4],r8
-	tcb *Temp=WAITING;
-	if(WAITING==NULL)
-		return;
-	if(Temp->waitUntil>SystemTime) //If tasks waiting time is bigger than systems time then no task will migrate to ready queue
-		return;
-	while(Temp!=NULL && Temp->waitUntil<=SystemTime){//If task EXSISTS and its waiting time is lower or equal then
 800000c0:	ee f8 ff fc 	ld.w	r8,r7[-4]
 800000c4:	58 08       	cp.w	r8,0
 800000c6:	c0 f0       	breq	800000e4 <Check_Waiting_Queue+0x70>
@@ -206,19 +142,7 @@ void Check_Waiting_Queue(){
 800000d8:	f2 0b 13 00 	cpc	r11,r9
 800000dc:	fe 98 ff e5 	brls	800000a6 <Check_Waiting_Queue+0x32>
 800000e0:	c0 28       	rjmp	800000e4 <Check_Waiting_Queue+0x70>
-	}
-}
-void Check_Waiting_Queue(){
-	tcb *Temp=WAITING;
-	if(WAITING==NULL)
-		return;
 800000e2:	d7 03       	nop
-	while(Temp!=NULL && Temp->waitUntil<=SystemTime){//If task EXSISTS and its waiting time is lower or equal then
-		Insert_Ready(Temp);//Move it to the ready queue
-		WAITING=Temp->nexttcb;//Unchain it from the list (since it is always the first element) and assign ptr of the next task to the WAITING
-		Temp=WAITING;//Change the temp node to the beginning of the queue
-	}
-}
 800000e4:	2f fd       	sub	sp,-4
 800000e6:	e3 cd 80 80 	ldm	sp++,r7,pc
 800000ea:	00 00       	add	r0,r0
@@ -230,32 +154,25 @@ void Check_Waiting_Queue(){
 800000f6:	01 2c       	ld.uh	r12,r0++
 
 800000f8 <Chose_A_Task_Frome_Ready_Queue>:
-void Chose_A_Task_Frome_Ready_Queue(){
 800000f8:	eb cd 40 80 	pushm	r7,lr
 800000fc:	1a 97       	mov	r7,sp
-	if(READY!=NULL){
 800000fe:	48 a8       	lddpc	r8,80000124 <Chose_A_Task_Frome_Ready_Queue+0x2c>
 80000100:	70 08       	ld.w	r8,r8[0x0]
 80000102:	58 08       	cp.w	r8,0
 80000104:	c0 e0       	breq	80000120 <Chose_A_Task_Frome_Ready_Queue+0x28>
-		EXECTASK=READY;//Executing ptr to the first node in ready queue
 80000106:	48 88       	lddpc	r8,80000124 <Chose_A_Task_Frome_Ready_Queue+0x2c>
 80000108:	70 09       	ld.w	r9,r8[0x0]
 8000010a:	48 88       	lddpc	r8,80000128 <Chose_A_Task_Frome_Ready_Queue+0x30>
 8000010c:	91 09       	st.w	r8[0x0],r9
-		READY=READY->nexttcb;//Queue should now point to the second node (UNLINK THE FIRST ELEMENT)
 8000010e:	48 68       	lddpc	r8,80000124 <Chose_A_Task_Frome_Ready_Queue+0x2c>
 80000110:	70 08       	ld.w	r8,r8[0x0]
 80000112:	70 09       	ld.w	r9,r8[0x0]
 80000114:	48 48       	lddpc	r8,80000124 <Chose_A_Task_Frome_Ready_Queue+0x2c>
 80000116:	91 09       	st.w	r8[0x0],r9
-		EXECTASK->nexttcb=NULL;//Pointer in the tcb structure shouldn't point nowhere =NULL
 80000118:	48 48       	lddpc	r8,80000128 <Chose_A_Task_Frome_Ready_Queue+0x30>
 8000011a:	70 08       	ld.w	r8,r8[0x0]
 8000011c:	30 09       	mov	r9,0
 8000011e:	91 09       	st.w	r8[0x0],r9
-	}
-}
 80000120:	e3 cd 80 80 	ldm	sp++,r7,pc
 80000124:	00 00       	add	r0,r0
 80000126:	00 14       	sub	r4,r0
@@ -263,128 +180,77 @@ void Chose_A_Task_Frome_Ready_Queue(){
 8000012a:	00 10       	sub	r0,r0
 
 8000012c <Insert_Ready>:
-	//If the task should be put at the end of the list
-	Temp->nexttcb=TASK;
-	TASK->nexttcb=NULL;
-	return;
-}
-void Insert_Ready(tcb *TASK){
 8000012c:	eb cd 40 80 	pushm	r7,lr
 80000130:	1a 97       	mov	r7,sp
 80000132:	20 3d       	sub	sp,12
 80000134:	ef 4c ff f4 	st.w	r7[-12],r12
-	int prio=TASK->priority;
 80000138:	ee f8 ff f4 	ld.w	r8,r7[-12]
 8000013c:	70 18       	ld.w	r8,r8[0x4]
 8000013e:	ef 48 ff f8 	st.w	r7[-8],r8
-	tcb *Temp=READY;
 80000142:	4a e8       	lddpc	r8,800001f8 <Insert_Ready+0xcc>
 80000144:	70 08       	ld.w	r8,r8[0x0]
 80000146:	ef 48 ff fc 	st.w	r7[-4],r8
-	if(Temp==NULL){//If the list is empty put it in first 
 8000014a:	ee f8 ff fc 	ld.w	r8,r7[-4]
 8000014e:	58 08       	cp.w	r8,0
 80000150:	c0 61       	brne	8000015c <Insert_Ready+0x30>
-		READY=TASK;
 80000152:	4a a8       	lddpc	r8,800001f8 <Insert_Ready+0xcc>
 80000154:	ee f9 ff f4 	ld.w	r9,r7[-12]
 80000158:	91 09       	st.w	r8[0x0],r9
-		return;
 8000015a:	c4 c8       	rjmp	800001f2 <Insert_Ready+0xc6>
-	}
-	if(TASK->priority==IDLE_PRIORITY){//Inserteing the IDLE Task
 8000015c:	ee f8 ff f4 	ld.w	r8,r7[-12]
 80000160:	70 18       	ld.w	r8,r8[0x4]
 80000162:	58 08       	cp.w	r8,0
 80000164:	c1 61       	brne	80000190 <Insert_Ready+0x64>
-		while(Temp->nexttcb!=NULL){
 80000166:	c0 68       	rjmp	80000172 <Insert_Ready+0x46>
-			Temp=Temp->nexttcb;
 80000168:	ee f8 ff fc 	ld.w	r8,r7[-4]
 8000016c:	70 08       	ld.w	r8,r8[0x0]
 8000016e:	ef 48 ff fc 	st.w	r7[-4],r8
-	if(Temp==NULL){//If the list is empty put it in first 
-		READY=TASK;
-		return;
-	}
-	if(TASK->priority==IDLE_PRIORITY){//Inserteing the IDLE Task
-		while(Temp->nexttcb!=NULL){
 80000172:	ee f8 ff fc 	ld.w	r8,r7[-4]
 80000176:	70 08       	ld.w	r8,r8[0x0]
 80000178:	58 08       	cp.w	r8,0
 8000017a:	cf 71       	brne	80000168 <Insert_Ready+0x3c>
-			Temp=Temp->nexttcb;
-		}
-		Temp->nexttcb=TASK;
 8000017c:	ee f8 ff fc 	ld.w	r8,r7[-4]
 80000180:	ee f9 ff f4 	ld.w	r9,r7[-12]
 80000184:	91 09       	st.w	r8[0x0],r9
-		TASK->nexttcb=NULL;
 80000186:	ee f8 ff f4 	ld.w	r8,r7[-12]
 8000018a:	30 09       	mov	r9,0
 8000018c:	91 09       	st.w	r8[0x0],r9
-		return;
 8000018e:	c3 28       	rjmp	800001f2 <Insert_Ready+0xc6>
-	}
-	if(Temp->priority<prio){//Inserting first task with highest priority in the whole ready queue
 80000190:	ee f8 ff fc 	ld.w	r8,r7[-4]
 80000194:	70 19       	ld.w	r9,r8[0x4]
 80000196:	ee f8 ff f8 	ld.w	r8,r7[-8]
 8000019a:	10 39       	cp.w	r9,r8
 8000019c:	c2 54       	brge	800001e6 <Insert_Ready+0xba>
-		TASK->nexttcb=Temp;
 8000019e:	ee f8 ff f4 	ld.w	r8,r7[-12]
 800001a2:	ee f9 ff fc 	ld.w	r9,r7[-4]
 800001a6:	91 09       	st.w	r8[0x0],r9
-		READY=TASK;
 800001a8:	49 48       	lddpc	r8,800001f8 <Insert_Ready+0xcc>
 800001aa:	ee f9 ff f4 	ld.w	r9,r7[-12]
 800001ae:	91 09       	st.w	r8[0x0],r9
-		return;
 800001b0:	c2 18       	rjmp	800001f2 <Insert_Ready+0xc6>
-	}
-	while(Temp->nexttcb!=NULL){
-		if(Temp->nexttcb->priority<prio){//Inserting other tasks (not lowest not highest)
 800001b2:	ee f8 ff fc 	ld.w	r8,r7[-4]
 800001b6:	70 08       	ld.w	r8,r8[0x0]
 800001b8:	70 19       	ld.w	r9,r8[0x4]
 800001ba:	ee f8 ff f8 	ld.w	r8,r7[-8]
 800001be:	10 39       	cp.w	r9,r8
 800001c0:	c0 d4       	brge	800001da <Insert_Ready+0xae>
-			TASK->nexttcb=Temp->nexttcb;
 800001c2:	ee f8 ff fc 	ld.w	r8,r7[-4]
 800001c6:	70 09       	ld.w	r9,r8[0x0]
 800001c8:	ee f8 ff f4 	ld.w	r8,r7[-12]
 800001cc:	91 09       	st.w	r8[0x0],r9
-			Temp->nexttcb=TASK;
 800001ce:	ee f8 ff fc 	ld.w	r8,r7[-4]
 800001d2:	ee f9 ff f4 	ld.w	r9,r7[-12]
 800001d6:	91 09       	st.w	r8[0x0],r9
-			return;
 800001d8:	c0 d8       	rjmp	800001f2 <Insert_Ready+0xc6>
-		}
-		Temp=Temp->nexttcb;
 800001da:	ee f8 ff fc 	ld.w	r8,r7[-4]
 800001de:	70 08       	ld.w	r8,r8[0x0]
 800001e0:	ef 48 ff fc 	st.w	r7[-4],r8
 800001e4:	c0 28       	rjmp	800001e8 <Insert_Ready+0xbc>
-	if(Temp->priority<prio){//Inserting first task with highest priority in the whole ready queue
-		TASK->nexttcb=Temp;
-		READY=TASK;
-		return;
-	}
-	while(Temp->nexttcb!=NULL){
 800001e6:	d7 03       	nop
 800001e8:	ee f8 ff fc 	ld.w	r8,r7[-4]
 800001ec:	70 08       	ld.w	r8,r8[0x0]
 800001ee:	58 08       	cp.w	r8,0
 800001f0:	ce 11       	brne	800001b2 <Insert_Ready+0x86>
-			return;
-		}
-		Temp=Temp->nexttcb;
-	}
-	//Idle task will always be at the end of the list
-}
 800001f2:	2f dd       	sub	sp,-12
 800001f4:	e3 cd 80 80 	ldm	sp++,r7,pc
 800001f8:	00 00       	add	r0,r0
@@ -394,22 +260,11 @@ void Insert_Ready(tcb *TASK){
 800001fc:	00 00 00 02 00 00 00 08 00 00 00 20 00 00 00 80     ........... ....
 
 8000020c <timerISR>:
-#include <limits.h>
-
-//SystemTime=0;
-__attribute__((__interrupt__))
-void timerISR(void)
-{
 8000020c:	eb cd 40 80 	pushm	r7,lr
 80000210:	1a 97       	mov	r7,sp
 80000212:	20 2d       	sub	sp,8
-	int sr;
-	volatile avr32_tc_t * tc = &AVR32_TC;
 80000214:	fe 78 38 00 	mov	r8,-51200
 80000218:	ef 48 ff fc 	st.w	r7[-4],r8
-	
-	//increments the SystemTime, resets before overflow
-	if(SystemTime+1 != TIMERTICK_MAXVAL)
 8000021c:	49 68       	lddpc	r8,80000274 <timerISR+0x68>
 8000021e:	f0 e8 00 00 	ld.d	r8,r8[0]
 80000222:	3f da       	mov	r10,-3
@@ -417,7 +272,6 @@ void timerISR(void)
 80000226:	14 38       	cp.w	r8,r10
 80000228:	f6 09 13 00 	cpc	r9,r11
 8000022c:	c0 e0       	breq	80000248 <timerISR+0x3c>
-		SystemTime++;
 8000022e:	49 28       	lddpc	r8,80000274 <timerISR+0x68>
 80000230:	f0 ea 00 00 	ld.d	r10,r8[0]
 80000234:	30 18       	mov	r8,1
@@ -427,25 +281,17 @@ void timerISR(void)
 80000240:	48 da       	lddpc	r10,80000274 <timerISR+0x68>
 80000242:	f4 e9 00 00 	st.d	r10[0],r8
 80000246:	c0 68       	rjmp	80000252 <timerISR+0x46>
-	else
-		SystemTime = 1;
 80000248:	48 ba       	lddpc	r10,80000274 <timerISR+0x68>
 8000024a:	30 18       	mov	r8,1
 8000024c:	30 09       	mov	r9,0
 8000024e:	f4 e9 00 00 	st.d	r10[0],r8
-	
-	//Read the timer status register to determine if this is a valid interrupt
-	sr = tc->channel[0].sr;
 80000252:	ee f8 ff fc 	ld.w	r8,r7[-4]
 80000256:	70 88       	ld.w	r8,r8[0x20]
 80000258:	ef 48 ff f8 	st.w	r7[-8],r8
-	if(sr & AVR32_TC_CPCS_MASK)
 8000025c:	ee f8 ff f8 	ld.w	r8,r7[-8]
 80000260:	e2 18 00 10 	andl	r8,0x10,COH
 80000264:	c0 30       	breq	8000026a <timerISR+0x5e>
-		ROSA_yieldFromISR();	//This saves context, calls the scheduler, switches over to next
 80000266:	f0 1f 00 05 	mcall	80000278 <timerISR+0x6c>
-}
 8000026a:	2f ed       	sub	sp,-8
 8000026c:	e3 cd 40 80 	ldm	sp++,r7,lr
 80000270:	d6 03       	rete
@@ -456,14 +302,10 @@ void timerISR(void)
 8000027a:	00 10       	sub	r0,r0
 
 8000027c <timerPeriodSet>:
-
-int timerPeriodSet(unsigned int ms){
 8000027c:	eb cd 40 80 	pushm	r7,lr
 80000280:	1a 97       	mov	r7,sp
 80000282:	20 7d       	sub	sp,28
 80000284:	ef 4c ff e4 	st.w	r7[-28],r12
-	int rc, prescale;
-	int f[] = { 2, 8, 32, 128 };
 80000288:	4a 48       	lddpc	r8,80000318 <timerPeriodSet+0x9c>
 8000028a:	ee ca 00 18 	sub	r10,r7,24
 8000028e:	10 9b       	mov	r11,r8
@@ -471,11 +313,8 @@ int timerPeriodSet(unsigned int ms){
 80000294:	f4 e9 00 00 	st.d	r10[0],r8
 80000298:	f6 e8 00 08 	ld.d	r8,r11[8]
 8000029c:	f4 e9 00 08 	st.d	r10[8],r8
-	//FOSC0 / factor_prescale * time[s];
-	prescale = AVR32_TC_CMR0_TCCLKS_TIMER_CLOCK5;
 800002a0:	30 48       	mov	r8,4
 800002a2:	ef 48 ff fc 	st.w	r7[-4],r8
-	rc = FOSC0 / f[prescale - 1] * ms / 1000;
 800002a6:	ee f8 ff fc 	ld.w	r8,r7[-4]
 800002aa:	20 18       	sub	r8,1
 800002ac:	a3 68       	lsl	r8,0x2
@@ -492,13 +331,10 @@ int timerPeriodSet(unsigned int ms){
 800002d2:	f2 08 06 48 	mulu.d	r8,r9,r8
 800002d6:	f2 08 16 06 	lsr	r8,r9,0x6
 800002da:	ef 48 ff f8 	st.w	r7[-8],r8
-	timerPrescaleSet(prescale);
 800002de:	ee fc ff fc 	ld.w	r12,r7[-4]
 800002e2:	f0 1f 00 0f 	mcall	8000031c <timerPeriodSet+0xa0>
-	timerRCSet(rc);
 800002e6:	ee fc ff f8 	ld.w	r12,r7[-8]
 800002ea:	f0 1f 00 0e 	mcall	80000320 <timerPeriodSet+0xa4>
-	return rc * prescale / FOSC0;
 800002ee:	ee f9 ff f8 	ld.w	r9,r7[-8]
 800002f2:	ee f8 ff fc 	ld.w	r8,r7[-4]
 800002f6:	f2 08 02 4a 	mul	r10,r9,r8
@@ -508,7 +344,6 @@ int timerPeriodSet(unsigned int ms){
 80000306:	b5 49       	asr	r9,0x14
 80000308:	f4 08 14 1f 	asr	r8,r10,0x1f
 8000030c:	f2 08 01 08 	sub	r8,r9,r8
-}
 80000310:	10 9c       	mov	r12,r8
 80000312:	2f 9d       	sub	sp,-28
 80000314:	e3 cd 80 80 	ldm	sp++,r7,pc
@@ -682,345 +517,139 @@ Disassembly of section .exception:
 	...
 
 80000628 <_handle_Privilege_Violation>:
-	.global _evba
-	.type _evba, @function
-_evba:
-	.org  0x28
-_handle_Privilege_Violation:
-	rjmp privilegedCalls					//Check for legal priviledged calls.
 80000628:	c7 a8       	rjmp	8000071c <privilegedCalls>
 	...
 
 80000700 <_handle_Supervisor_Call>:
-
-	.org  0x100
-_handle_Supervisor_Call:
-	mov pc,lr								//ROSA Kernel function calls pass through here.
 80000700:	1c 9f       	mov	pc,lr
 
 80000702 <_int0>:
- *  in this case: timerISR().
- *
- **********************************************************/
-	//TC0 interrupt
-_int0:
-	mov r12,lo(AVR32_INTC_ADDRESS)
 80000702:	e0 6c 08 00 	mov	r12,2048
-	orh r12,hi(AVR32_INTC_ADDRESS)
 80000706:	ea 1c ff ff 	orh	r12,0xffff
-	ld.w r12,r12[AVR32_INTC_IRR + GRP14]	//TC irq grp is at GRP14
 8000070a:	f8 fc 01 38 	ld.w	r12,r12[312]
-	andl r12,LINE0							//TC0 irq is at line 0
 8000070e:	e0 1c 00 01 	andl	r12,0x1
-	cp.w r12,LINE0							//Is line 0 sending interrupt signal?
 80000712:	58 1c       	cp.w	r12,1
-	brne _int0_exit							//No, exit
 80000714:	c0 31       	brne	8000071a <_int0_exit>
-	lda.w r12,timerISR						//Pointer to the timer ISR
 80000716:	4b 9c       	lddpc	r12,800007f8 <contextRestoreFromISR+0x40>
-	mov pc,r12								//Yes, go to the ISR.
 80000718:	18 9f       	mov	pc,r12
 
 8000071a <_int0_exit>:
-_int0_exit:
-	rete
 8000071a:	d6 03       	rete
 
 8000071c <privilegedCalls>:
-//------------------------------------
-//USERSR - user SR at the offending instant
-//USERPC - user PC which contain the offending instruction
-
-	//Investigate is this is a legal disable/enable interrupt requests
-	pushm r11,r12
 8000071c:	d3 01       	pushm	r11-r12
-	ld.w r11,sp[USERPC]
 8000071e:	7a 3b       	ld.w	r11,sp[0xc]
-	mov r12,r11
 80000720:	16 9c       	mov	r12,r11
-	sub r12,-0x02							//Modify to get return address
 80000722:	2f ec       	sub	r12,-2
-	st.w sp[USERPC],r12						//Put return address on the stack
 80000724:	9b 3c       	st.w	sp[0xc],r12
 
 80000726 <priv_interruptdisable>:
-
-	//Look for interruptDisable
-priv_interruptdisable:
-	lda.w r12,interruptDisable
 80000726:	4b 6c       	lddpc	r12,800007fc <contextRestoreFromISR+0x44>
-	cp.w r11,r12
 80000728:	18 3b       	cp.w	r11,r12
-	brne priv_interruptenable
 8000072a:	c0 61       	brne	80000736 <priv_interruptenable>
-	ld.w r12,sp[USERSR]
 8000072c:	7a 2c       	ld.w	r12,sp[0x8]
-	sbr r12,AVR32_SR_GM						//Ok, disable interrupts
 8000072e:	b1 ac       	sbr	r12,0x10
-	st.w sp[USERSR],r12
 80000730:	9b 2c       	st.w	sp[0x8],r12
-	popm r11,r12
 80000732:	d3 02       	popm	r11-r12
-	rete
 80000734:	d6 03       	rete
 
 80000736 <priv_interruptenable>:
-
-	//Look for interruptEnable
-priv_interruptenable:
-	lda.w r12,interruptEnable
 80000736:	4b 3c       	lddpc	r12,80000800 <contextRestoreFromISR+0x48>
-	cp.w r11,r12
 80000738:	18 3b       	cp.w	r11,r12
-	brne privexception
 8000073a:	c0 61       	brne	80000746 <privexception>
-	ld.w r12,sp[USERSR]
 8000073c:	7a 2c       	ld.w	r12,sp[0x8]
-	cbr r12,AVR32_SR_GM						//Ok, enable interrupts
 8000073e:	b1 cc       	cbr	r12,0x10
-	st.w sp[USERSR],r12
 80000740:	9b 2c       	st.w	sp[0x8],r12
-	popm r11,r12
 80000742:	d3 02       	popm	r11-r12
-	rete
 80000744:	d6 03       	rete
 
 80000746 <privexception>:
-
-privexception:								//Not ok.
-	rjmp $									//End here as we received an illegal privileged call.
 80000746:	c0 08       	rjmp	80000746 <privexception>
 
 80000748 <interruptInit>:
- *
- * C prototypes:
- * 	extern void interruptInit(void);
- **********************************************************/
-interruptInit:
-	pushm r11,r12,lr
 80000748:	d7 01       	pushm	r11-r12,lr
-	//Get autovector offset to _int0
-	lda.w r11,_int0
 8000074a:	fe cb 00 48 	sub	r11,pc,72
-	lda.w r12,_evba
 8000074e:	4a ec       	lddpc	r12,80000804 <contextRestoreFromISR+0x4c>
-	sub r11,r12
 80000750:	18 1b       	sub	r11,r12
-
-	//Calculate int level
-	mov r12,INTLEVEL0
 80000752:	30 0c       	mov	r12,0
-	or r11,r11,r12 << INTLEVEL_OFFSET
 80000754:	f7 ec 11 eb 	or	r11,r11,r12<<0x1e
-
-	//Store the _int0 level and autovector offset to the interrupt priority register
-	mov r12,lo(AVR32_INTC_ADDRESS+GRP14)
 80000758:	e0 6c 08 38 	mov	r12,2104
-	orh r12,hi(AVR32_INTC_ADDRESS+GRP14)
 8000075c:	ea 1c ff ff 	orh	r12,0xffff
-	st.w r12,r11
 80000760:	99 0b       	st.w	r12[0x0],r11
-	popm r11,r12,lr
 80000762:	d7 02       	popm	r11-r12,lr
-	mov pc,lr
 80000764:	1c 9f       	mov	pc,lr
 
 80000766 <interruptDisable>:
- * C prototype:
- * 	void interruptDisable(void);
- *
- *********************************************************/
-interruptDisable:
-	ssrf AVR32_SR_GM
 80000766:	d3 03       	ssrf	0x10
-	mov pc,lr
 80000768:	1c 9f       	mov	pc,lr
 
 8000076a <interruptEnable>:
- * C prototype:
- * 	void interruptEnable(void);
- *
- *********************************************************/
-interruptEnable:
-	csrf AVR32_SR_GM
 8000076a:	d5 03       	csrf	0x10
-	mov pc,lr
 8000076c:	1c 9f       	mov	pc,lr
 
 8000076e <isInterruptEnabled>:
- * C prototype:
- * 	int isInterruptEnabled(void);
- *
- *********************************************************/
-isInterruptEnabled:
-	mfsr r12,0
 8000076e:	e1 bc 00 00 	mfsr	r12,0x0
-	lsr r12,AVR32_SR_GM
 80000772:	b1 8c       	lsr	r12,0x10
-	andl r12,TRUE
 80000774:	e0 1c 00 01 	andl	r12,0x1
-	eorl r12,TRUE
 80000778:	ec 1c 00 01 	eorl	r12,0x1
-	mov pc,lr
 8000077c:	1c 9f       	mov	pc,lr
 
 8000077e <contextSaveFromISR>:
-.equ SFINT0_R9, 0x06*0x04+SFINT0OFFSET
-.equ SFINT0_R8, 0x07*0x04+SFINT0OFFSET
-
-contextSaveFromISR:
-	//Fetch the current executing task
-	lda.w r12,EXECTASK
 8000077e:	4a 3c       	lddpc	r12,80000808 <contextRestoreFromISR+0x50>
-	ld.w r12,r12[0x0]
 80000780:	78 0c       	ld.w	r12,r12[0x0]
-
-	//Save working registers
-	st.w r12[TCB.SAVER0],r0
 80000782:	99 60       	st.w	r12[0x18],r0
-	ld.w r0,sp[SFINT0_R12]
 80000784:	7a 90       	ld.w	r0,sp[0x24]
-	st.w r12[TCB.SAVEREG.R12],r0
 80000786:	99 c0       	st.w	r12[0x30],r0
-
-	//Save SR
-	ld.w r0,sp[SFINT0_SR]
 80000788:	7a 60       	ld.w	r0,sp[0x18]
-	st.w r12[TCB.SAVESR],r0
 8000078a:	99 80       	st.w	r12[0x20],r0
-
-	//Read register from the stack
-	ld.w r8,sp[SFINT0_R8]
 8000078c:	7a d8       	ld.w	r8,sp[0x34]
-	ld.w r9,sp[SFINT0_R9]
 8000078e:	7a c9       	ld.w	r9,sp[0x30]
-	ld.w r10,sp[SFINT0_R10]
 80000790:	7a ba       	ld.w	r10,sp[0x2c]
-	ld.w r11,sp[SFINT0_R11]
 80000792:	7a ab       	ld.w	r11,sp[0x28]
-
-	//Save registers
-	mov r0,TCB.SAVEREG.R11
 80000794:	33 40       	mov	r0,52
-	add r0,r12
 80000796:	18 00       	add	r0,r12
-	stmts r0,r0-r11
 80000798:	ed c0 0f ff 	stmts	r0,r0-r11
-
-	//Save r7_task
-	ld.w r0,sp[SFINT0_R7_TASK]
 8000079c:	7a 50       	ld.w	r0,sp[0x14]
-	st.w r12[TCB.SAVEREG.R7],r0
 8000079e:	f9 40 00 44 	st.w	r12[68],r0
-
-	//Save RETADDR
-	ld.w r0,sp[SFINT0_PC]
 800007a2:	7a 70       	ld.w	r0,sp[0x1c]
-	st.w r12[TCB.RETADDR],r0
 800007a4:	99 90       	st.w	r12[0x24],r0
-
-	//Save LR
-	ld.w r0,sp[SFINT0_LR]			//This points back to the task
 800007a6:	7a 80       	ld.w	r0,sp[0x20]
-	st.w r12[TCB.SAVEREG.LR],r0
 800007a8:	99 a0       	st.w	r12[0x28],r0
-
-	//Save USP
-	mov r0,sp
 800007aa:	1a 90       	mov	r0,sp
-	st.w --sp,r0
 800007ac:	1a d0       	st.w	--sp,r0
-	stmts sp,sp
 800007ae:	ed cd 20 00 	stmts	sp,sp
-	ld.w r0,sp++
 800007b2:	1b 00       	ld.w	r0,sp++
-	st.w r12[TCB.SAVEUSP],r0
 800007b4:	99 50       	st.w	r12[0x14],r0
-
-	mov pc,lr
 800007b6:	1c 9f       	mov	pc,lr
 
 800007b8 <contextRestoreFromISR>:
-* Context of the TCB referenced by EXECTASK will be restored.
-*
-*********************************************************/
-contextRestoreFromISR:
-	//Fetch the current executing task
-	lda.w r12,EXECTASK
 800007b8:	49 4c       	lddpc	r12,80000808 <contextRestoreFromISR+0x50>
-	ld.w r12,r12[0x0]
 800007ba:	78 0c       	ld.w	r12,r12[0x0]
-
-	//Restore USP
-	ld.w r0,r12[TCB.SAVEUSP]
 800007bc:	78 50       	ld.w	r0,r12[0x14]
-	st.w --sp,r0
 800007be:	1a d0       	st.w	--sp,r0
-	ldmts sp,sp
 800007c0:	e5 cd 20 00 	ldmts	sp,sp
-	ld.w r0,sp++							//USP is in r0
 800007c4:	1b 00       	ld.w	r0,sp++
-
-	//Restore LR
-	ld.w r0,r12[TCB.SAVEREG.LR]
 800007c6:	78 a0       	ld.w	r0,r12[0x28]
-	st.w sp[SFINT0_LR],r0					//Restore lr on the stack
 800007c8:	9b 80       	st.w	sp[0x20],r0
-
-	//Restore RETADDR
-	ld.w r0,r12[TCB.RETADDR]
 800007ca:	78 90       	ld.w	r0,r12[0x24]
-	st.w sp[SFINT0_PC],r0					//Restore return address on stack
 800007cc:	9b 70       	st.w	sp[0x1c],r0
-
-	//Restore registers
-	mov r0,TCB.SAVEREG.R11
 800007ce:	33 40       	mov	r0,52
-	add r0,r12
 800007d0:	18 00       	add	r0,r12
-	ldmts r0,r0-r11
 800007d2:	e5 c0 0f ff 	ldmts	r0,r0-r11
-
-	//Restore SR
-	ld.w r0,r12[TCB.SAVESR]
 800007d6:	78 80       	ld.w	r0,r12[0x20]
-	st.w sp[SFINT0_SR],r0					//Put the new SR on the stack
 800007d8:	9b 60       	st.w	sp[0x18],r0
-
-	//Restore of R8-R12
-	ld.w r0,r12[TCB.SAVEREG.R12]
 800007da:	78 c0       	ld.w	r0,r12[0x30]
-	st.w sp[SFINT0_R12],r0
 800007dc:	9b 90       	st.w	sp[0x24],r0
-	st.w sp[SFINT0_R11],r11
 800007de:	9b ab       	st.w	sp[0x28],r11
-	st.w sp[SFINT0_R10],r10
 800007e0:	9b ba       	st.w	sp[0x2c],r10
-	st.w sp[SFINT0_R9],r9
 800007e2:	9b c9       	st.w	sp[0x30],r9
-	st.w sp[SFINT0_R8],r8
 800007e4:	9b d8       	st.w	sp[0x34],r8
-
-	//Restore r7
-	ld.w r0,r12[TCB.SAVEREG.R7]				//This is the r7_user
 800007e6:	79 10       	ld.w	r0,r12[0x44]
-	st.w sp[SFINT0_R7_TASK],r0				//Save r7_user to the stack, in order to not have the r7_user destroyed.
 800007e8:	9b 50       	st.w	sp[0x14],r0
-
-	//Restore work registers
-	ld.w r0,r12[TCB.SAVER0]
 800007ea:	78 60       	ld.w	r0,r12[0x18]
-
-	//Restart timer 0, necessary as timer is stopped by the irq event.
-	pushm lr
 800007ec:	d4 01       	pushm	lr
-	call timerStart
 800007ee:	f0 1f 00 08 	mcall	8000080c <contextRestoreFromISR+0x54>
-	popm lr
 800007f2:	d4 02       	popm	lr
-
-	//Return back to the ISR handler
-	mov pc,lr
 800007f4:	1c 9f       	mov	pc,lr
 800007f6:	00 00       	add	r0,r0
 800007f8:	80 00       	ld.sh	r0,r0[0x0]
