@@ -270,49 +270,39 @@ handleID ROSA SemaphoreIPCPCreate ()
 /***********************************************************
  bool ROSA SemaphoreIPCPTake (handleID ID, timerTick ticksToWait)
  ***********************************************************/
-
 bool ROSA SemaphoreIPCPTake (handleID ID, timerTick ticksToWait)
 {
-	
-	if (semaphoreHandlerTable == NULL)
-	{
-		// The table does not exist
-		return false;
-	}
-	
-	// If semaphore handler does not exist
-	else if (semaphoreHandlerTable[ID] == NULL)
+	if (semaphoreHandlerTable == NULL)	// The table does not exist
 	{
 		return false;
 	}
-	
-	// If semaphore is Binary
-	else if (semaphoreHandlerTable[ID]->flag == 0)
+	else if (semaphoreHandlerTable[ID] == NULL)	// If semaphore handler does not exist
 	{
 		return false;
 	}
-	
-	// If the semaphore is free
-	else if (semaphoreHandlerTable[ID]->state == Free)
+	else if (semaphoreHandlerTable[ID]->isBinary == 1)	// If semaphore is Binary
 	{
+		return false;
+	}
+	else if (semaphoreHandlerTable[ID]->state == Free)	// If the semaphore is free
+	{
+		// Check if the Task's Prio is greater than all currently locked semaphores 
 		
-		int prio;
-		handleID ID;
-		prio = EXECTASK->priority;
-		ID = EXECTASK->handleID;
-		
-		(for i=0; i<50; i++)
+		(for i=0; i<MAX_SEM; i++) // Iterate trough the whole array
 		{
-			if (semaphoreHandlerTable[i] == NULL)
+			if (semaphoreHandlerTable[i] == NULL) // Hop and check next index
 			{
 				i = i + 1;
-			}
-			
-			if (semaphoreHandlerTable[i]->flag == 1)
-			{
-				if (prio <= semaphoreHandlerTable[i]->ciel )
+				while (semaphoreHandlerTable[i] =! NULL) // Iterate until you find an address
 				{
-					// Delay the function
+					i++
+				}
+			}
+			else if (semaphoreHandlerTable[i]->state == Taken) // For all taken semaphores
+			{
+				if (EXECTASK->priority <= semaphoreHandlerTable[i]->ceil ) // Check if the priority is lower than the ceil value
+				{
+					// If it is lower then the delay the function
 					TimerTick newWakeTime;
 					TimerTick timeUntilOverflow;
 							
@@ -331,7 +321,7 @@ bool ROSA SemaphoreIPCPTake (handleID ID, timerTick ticksToWait)
 							
 					EXECTASK->waitUntil = newWakeTime;	//Save wake time into task's attribute
 							
-					Insert_Blocked(EXECTASK);	//Put the task into the Waiting Queue
+					Insert_Blocked(EXECTASK);	//	Put the task into the Block Queue
 							
 					ROSA_yield();		//Call the scheduler (ex: yield)
 					
@@ -339,23 +329,20 @@ bool ROSA SemaphoreIPCPTake (handleID ID, timerTick ticksToWait)
 					return false;
 				}
 			}
-			
 			i++;
-
 		}
+		interruptDisable(void);	// Disable interrupt when accessing global variables
 		
-		// Disable interrupt when accessing global variables
-		interruptDisable(void);
+		semaphoreHandlerTable[ID]->state = Taken;	// Change the state since it is taken now
 		
-		// Change the state to 1, meaning it is taken now
-		semaphoreHandlerTable[ID]->task = Taken;
-		
-		semaphoreHandlerTable[ID]->taskPriority = 
+		if(EXECTASK->priority < semaphoreHandlerTable[ID]->ceil) // If task's priority is lower then the ceil value of the acquired semaphore
+		{
+			semaphoreHandlerTable[ID]->taskPriority = EXECTASK->priority; // Save task's prio
+			EXECTASK->priority = semaphoreHandlerTable[ID]->ceil; // Raise the priority
+		}
 		
 		// Enable interrupt
 		interruptEnable(void);
-		
-		EXECTASK
 		
 		return true;
 	}
@@ -363,45 +350,56 @@ bool ROSA SemaphoreIPCPTake (handleID ID, timerTick ticksToWait)
 	// The semaphore is taken
 	else
 	{
-		// Semaphore is taken but we do not want to wait
-		if(ticksToWait == 0)
+		if(ticksToWait == 0) // Semaphore is taken but we do not want to wait
 		{
 			return false;
 		}
-		
-		// Semaphore is taken and we want to wait forever
-		if(ticksToWait == TIMERTICK_MAXVAL)
+		if(ticksToWait == TIMERTICK_MAXVAL)	// Semaphore is taken and we want to wait forever
 		{
-			// Task must be blocked
-			// Request the tcb handle ID by executing task
-			// Call function to send the task to blocking state
-			// Send some kind of information to the scheduler to notify it to send the task to the blocking state
-			
+			EXECTASK->waitSemaphore = TIMERTICK_MAXVAL;
+			Insert_Blocked(EXECTASK);	// Task must be blocked
+			// WHAT HAPPENS WITH THE TASK?
+			return false;	
 		}
 		
-		// Delay the function CHANGE HERERERE
-		ROSA_Delay(ticksToWait);
-		
-		// Check to see whether the semaphore is still taken
-		if(semaphoreHandlerTable[ID]->state == Taken)
+		// Delay the function
+		TimerTick newWakeTime;
+		TimerTick timeUntilOverflow;
+
+		//CRITICAL SECTION
+		timeUntilOverflow = TIMERTICK_MAXVAL - SystemTime;
+
+		if(ticksToWait > timeUntilOverflow)
 		{
-			// Semaphore is taken, even after waiting
-			return false;
+			newWakeTime = ticksToWait - timeUntilOverflow;
 		}
-		else(semaphoreHandlerTable[ID]->state == Free)
+		else
 		{
-			// Semaphore got free while waiting
+			newWakeTime = SystemTime + ticksToWait;	// Add delay-length to current time
+		}
+		//END OF CRITICAL SECTION
+
+		EXECTASK->waitUntil = newWakeTime;	// Save wake time into task's attribute
+
+		Insert_Blocked(EXECTASK);	// Put the task into the Blocking Queue
+
+		ROSA_yield();	// Call the scheduler (ex: yield)
+		
+		// IS THIS CORRECT? WILL IT WAIT UNTIL THE NEW WAKETIME TO CHECK THIS?
+		if(semaphoreHandlerTable[ID]->state == Taken) // Check to see whether the semaphore is still taken
+		{
+			return false;	// Semaphore is taken, even after waiting
+		}
+		else(semaphoreHandlerTable[ID]->state == Free)	// Semaphore got free while waiting
+		{
 			return true;
 		}
-		
 	}
-	
 }
 
 /***********************************************************
  bool ROSA SemaphoreIPCPRelease (handleID ID)
  ***********************************************************/
-
 bool ROSA SemaphoreIPCPRelease (handleID ID)
 {
 	
