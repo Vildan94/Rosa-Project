@@ -2,6 +2,8 @@
 # Automatically-generated file. Do not edit or delete the file
 ################################################################################
 
+src\kernel\rosa_testc_sem.c
+
 src\kernel\rosa_semaphores.c
 
 src\main.c

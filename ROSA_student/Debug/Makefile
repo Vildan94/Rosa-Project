@@ -48,6 +48,7 @@ SUBDIRS :=  \
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS +=  \
+../src/kernel/rosa_testc_sem.c \
 ../src/kernel/rosa_semaphores.c \
 ../src/main.c \
 ../src/kernel/rosa_int.c \
@@ -65,6 +66,7 @@ ASM_SRCS +=
 
 
 OBJS +=  \
+src/kernel/rosa_testc_sem.o \
 src/kernel/rosa_semaphores.o \
 src/main.o \
 src/kernel/rosa_int.o \
@@ -75,6 +77,7 @@ src/kernel/rosa_scheduler.o \
 src/kernel/rosa_tim.o
 
 OBJS_AS_ARGS +=  \
+src/kernel/rosa_testc_sem.o \
 src/kernel/rosa_semaphores.o \
 src/main.o \
 src/kernel/rosa_int.o \
@@ -85,6 +88,7 @@ src/kernel/rosa_scheduler.o \
 src/kernel/rosa_tim.o
 
 C_DEPS +=  \
+src/kernel/rosa_testc_sem.d \
 src/kernel/rosa_semaphores.d \
 src/main.d \
 src/kernel/rosa_int.d \
@@ -95,6 +99,7 @@ src/kernel/rosa_scheduler.d \
 src/kernel/rosa_tim.d
 
 C_DEPS_AS_ARGS +=  \
+src/kernel/rosa_testc_sem.d \
 src/kernel/rosa_semaphores.d \
 src/main.d \
 src/kernel/rosa_int.d \
@@ -119,6 +124,8 @@ LINKER_SCRIPT_DEP+=  \
 
 
 # AVR32/GNU C Compiler
+
+
 
 
 

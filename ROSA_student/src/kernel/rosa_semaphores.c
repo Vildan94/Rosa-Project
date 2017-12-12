@@ -1,9 +1,8 @@
 #include "kernel/rosa_sem.h"
-#define MAX_SEM 50
+
 /***********************************************************
  * Create global array needed for storing pointers to semaphores
  ***********************************************************/
-semaphoreHandler semaphoreHandlerTable[MAX_SEM] = {NULL};
 
 // OBSERVE SCHEDULUREE OR TASK SHOULD PUT THE EXEC-TASK IN WAITING STATE WHEN RETURN FALSE OR NO?
 // SHOULD I DO IT HERE? I MEAN SOMETIMES I DO BLOCK AND THEN RETURN FALSE HOW THE SCHEDULAR NOW WHEN TO NOT AND WHEN TO DO?
@@ -11,46 +10,39 @@ semaphoreHandler semaphoreHandlerTable[MAX_SEM] = {NULL};
 /***********************************************************
  handleID ROSA SemaphoreBinaryCreate()
  ***********************************************************/
-handleID ROSA_SemaphoreBinaryCreate() {
-	
-	handleID ID;
-	int emptySlot, i;
-	semaphoreHandler Handler;
-	Handler = NULL;
-	Handler = (semaphoreHandler)malloc(sizeof(Semaphore));
-	
-	if (Handler == NULL) // Error occurred, no memory allocation
-	{	
-		return -1;
-	}
 
-	for(i=0; i<MAX_SEM; i++) // Iterate the array and check for an empty slot
+handleID ROSA_SemaphoreBinaryCreate()
+{
+	int i;
+
+	for(i=0; i<MAX_SEM; i++) // Iterate the global array and check for an empty slot
 	{
 		if (semaphoreHandlerTable[i] == NULL) // Found an empty slot
 		{
-			emptySlot = i;
-			break;
-		}
-		else // Table is full
-		{
-			return -1;
+			//
+			semaphoreHandlerTable[i] = (semaphoreHandler)malloc(sizeof(Semaphore));
+			
+			if (semaphoreHandlerTable[i] == NULL)
+			{
+				return -1;
+			}
+			
+			interruptDisable(); // Disable interrupt when accessing global variables
+			semaphoreHandlerTable[i]->ID = i; // The ID will be the index of the empty slot
+			semaphoreHandlerTable[i]->isBinary = 1;	// It is a binary semaphore
+			semaphoreHandlerTable[i]->state = Free;		// Semaphore is Free
+			semaphoreHandlerTable[i]->ceil = -1;		// Unused field set to -1
+			semaphoreHandlerTable[i]->taskPriority = -1;	// Unused field set to -1
+			interruptEnable(); // Enable interrupt when done with accessing global variables
+				
+			return i; // Return ID to the user
 		}
 	}
 	
-	interruptDisable();	// Disable interrupt when accessing global variables
-	semaphoreHandlerTable[emptySlot] = Handler; // Store the address of the semaphore in the empty slot
+	// After checking the whole table and it is full return
+	return -1;
+	
 	// When a semaphore is deleted the corresponding pointer will point to NULL
-	
-	Handler->ID = emptySlot; // The ID will be the index of the empty slot
-	Handler->isBinary = 1;	// It is a binary semaphore
-	Handler->state = Free;		// Semaphore is Free
-	Handler->ceil = -1;		// Unused field set to -1
-	Handler->taskPriority = -1;	// Unused field set to -1
-	
-	ID = Handler->ID;
-	interruptEnable(); // Enable interrupt when done with accessing global variables
-	
-	return ID; // Return ID to the user
 }
 
 /***********************************************************
@@ -231,47 +223,34 @@ bool ROSA_SemaphoreDelete (handleID ID)
  ***********************************************************/
 handleID ROSA_SemaphoreIPCPCreate ()
 {
-	handleID ID;
-	int emptySlot, i;
-	semaphoreHandler Handler;
-	Handler = NULL;
-	Handler = (semaphoreHandler)malloc(sizeof(Semaphore));
-	
-	if (semaphoreHandlerTable == NULL)	// The table does not exist
-	{
-		return -1;
-	}
-	else if (Handler == NULL)	// Error occurred, no memory allocation
-	{
-		return -1;
-	}
+	int i;
 
-	for(i=0; i<MAX_SEM; i++)	// Iterate the array and check for an empty slot
+	for(i=0; i<MAX_SEM; i++) // Iterate the global array and check for an empty slot
 	{
-		if (semaphoreHandlerTable[i] == NULL)	// Found an empty slot
+		if (semaphoreHandlerTable[i] == NULL) // Found an empty slot
 		{
-			emptySlot = i;	
-			break;
-		}
-		else // Table is full
-		{
-			return -1;
+			//
+			semaphoreHandlerTable[i] = (semaphoreHandler)malloc(sizeof(Semaphore));
+				
+			if (semaphoreHandlerTable[i] == NULL)
+			{
+				return -1;
+			}
+				
+			interruptDisable(); // Disable interrupt when accessing global variables
+			semaphoreHandlerTable[i]->ID = i; // The ID will be the index of the empty slot
+			semaphoreHandlerTable[i]->isBinary = 0;	// It is a binary semaphore
+			semaphoreHandlerTable[i]->state = Free;		// Semaphore is Free
+			semaphoreHandlerTable[i]->ceil = 0;		// Unused field set to -1
+			semaphoreHandlerTable[i]->taskPriority = 0;	// Unused field set to -1
+			interruptEnable(); // Enable interrupt when done with accessing global variables
+				
+			return i; // Return ID to the user
 		}
 	}
-	
-	interruptDisable();	// Disable interrupt when accessing global variables
-	semaphoreHandlerTable[emptySlot] = Handler;	// Store the address of the semaphore in the empty slot
-	// When a semaphore is deleted the corresponding pointer will point to NULL
-	
-	Handler->ID = emptySlot; // The ID will be the index of the empty slot
-	Handler->isBinary = 0;	// It is NOT a binary semaphore
-	Handler->state = Free;		// Semaphore is Free
-	Handler->ceil = 0;		
-	Handler->taskPriority = 0;
-	interruptEnable();
-	
-	ID = Handler->ID;
-	return ID;
+		
+	// After checking the whole table and it is full return
+	return -1;
 }
 
 /***********************************************************

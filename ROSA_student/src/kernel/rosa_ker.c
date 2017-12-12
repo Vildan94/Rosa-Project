@@ -24,7 +24,7 @@ void ROSA_init(void)
 	joystickInit();								//Joystick
 	potInit();									//Potentiometer
 	usartInit(USART, &usart_options, FOSC0);	//Serial communication
-	TCBLIST = NULL;
+	//TCBLIST = NULL;
 	EXECTASK = NULL;
 }
  

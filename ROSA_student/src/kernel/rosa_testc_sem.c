@@ -5,6 +5,7 @@
  *  Author: mgo12003
  */ 
 
+/***********************************************************
 #include "kernel/rosa_sem.h"
 
 // CREATING SEMAPHORES + NESTING + DELETION
@@ -27,53 +28,55 @@ sem3 = ROSA_SemaphoreBinaryCreate();
 
 if (sem1 != -1)
 {
-	// LED0 TURN ON
+	ledOn(LED0_GPIO);
 }
 if (sem2 != -1)
 {
-	// LED1 TURN ON
+	ledOn(LED1_GPIO);
 }
 if (sem3 != -1)
 {
-	// LED2 TURN ON
+	ledOn(LED2_GPIO);
 }
 
-// LED1 TURN OFF
-// LED2 TURN OFF
-// LED3 TURN OFF
+ledOff(LED0_GPIO);
+ledOff(LED1_GPIO);
+ledOff(LED2_GPIO);
+
+
 
 val = ROSA_SemaphoreBinaryTake(sem1, ten);
 if (val == true)
 {
-	// LED0 TURN ON
+	ledOn(LED0_GPIO);
 }
 val = ROSA_SemaphoreBinaryTake(sem2, ten);
 if (val == true)
 {
-	// LED1 TURN ON
+	ledOn(LED1_GPIO);
 }
 
 val = ROSA_SemaphoreBinaryRelease (sem2);
 if (val == true)
 {
-	// LED1 TURN OFF
+	ledOff(LED1_GPIO);
 }
 
 val = ROSA_SemaphoreBinaryRelease (sem1);
 if (val == true)
 {
-	// LED0 TURN OFF
+	ledOff(LED2_GPIO);
 }
 
 val = ROSA_SemaphoreBinaryTake(sem3, ten);
 if (val == true)
 {
-	// LED2 TURN ON
+	ledOn(LED2_GPIO);
 }
 val = ROSA_SemaphoreBinaryRelease (sem3);
 if (val == true)
 {
-	// LED2 TURN OFF
+	ledOff(LED2_GPIO);
 }
 
 val = ROSA_SemaphoreDelete (sem2);
@@ -81,10 +84,10 @@ if (val == true)
 {
 	if (sem2 == NULL)
 	{
-		// LED 3 TURN ON
+		ledOn(LED3_GPIO);
 	}
 }
-// LED 3 TURN OFF
+ledOff(LED3_GPIO);
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -99,45 +102,44 @@ semIPCP3 = ROSA_SemaphoreIPCPCreate ();
 
 if (semIPCP1 != -1)
 {
-	// LED0 TURN ON
+	ledOn(LED0_GPIO);
 }
 if (semIPCP2 != -1)
 {
-	// LED1 TURN ON
+	ledOn(LED1_GPIO);
 }
 if (semIPCP3 != -1)
 {
-	// LED2 TURN ON
+	ledOn(LED2_GPIO);
 }
 
-// LED1 TURN OFF
-// LED2 TURN OFF
-// LED3 TURN OFF
+ledOff(LED0_GPIO);
+ledOff(LED1_GPIO);
+ledOff(LED2_GPIO);
 
 /////////
 
 val = ROSA_SemaphoreIPCPTake(semIPCP1, nowaiting);
 if (val == true)
 {
-	// LED0 TURN ON
+	ledOn(LED0_GPIO);
 }
 val = ROSA_SemaphoreIPCPTake(semIPCP2, ten);
 if (val == true)
 {
-	// LED1 TURN ON
+	ledOn(LED1_GPIO);
 }
 
 val = ROSA_SemaphoreIPCPTake(semIPCP2, forever);
 if (val == false)
 {
-	// CORRECT AND SHOULD BLOCK
-	// LED1 BLINKING
+	ledToggle(LED1_GPIO)
 }
 
 val = ROSA_SemaphoreIPCPRelease(semIPCP2);
 if (val == true)
 {
-	// LED1 TURN OFF
+	ledOff(LED1_GPIO);
 }
 
 // SHOULD SEMIPCP2 be Taken now by the task wanting to wait forever? Or how does it work?!
@@ -146,18 +148,18 @@ if (val == true)
 val = ROSA_SemaphoreIPCPRelease(semIPCP1);
 if (val == true)
 {
-	// LED0 TURN OFF
+	ledOff(LED0_GPIO);
 }
 
 val = ROSA_SemaphoreIPCPTake(semIPCP3, forever);
 if (val == true)
 {
-	// LED2 TURN ON
+	ledOn(LED2_GPIO);
 }
 val = ROSA_SemaphoreBinaryRelease (semIPCP3);
 if (val == true)
 {
-	// LED2 TURN OFF
+	ledOff(LED2_GPIO);
 }
 
 val = ROSA_SemaphoreDelete (semIPCP1);
@@ -165,7 +167,9 @@ if (val == true)
 {
 	if (semIPCP1 == NULL)
 	{
-		// LED 3 TURN ON
+		ledOn(LED3_GPIO);
 	}
 }
-// LED 3 TURN OFF
+ledOff(LED3_GPIO);
+
+ ***********************************************************/

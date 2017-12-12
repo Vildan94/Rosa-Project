@@ -22,6 +22,9 @@
 
 #define Taken 1
 #define Free 0
+#define MAX_SEM 50
+
+
 
 struct semaphore {
 	int ceil;
@@ -36,6 +39,8 @@ typedef Semaphore * semaphoreHandler;
 
 typedef unsigned long long timerTick;
 typedef int handleID;
+
+semaphoreHandler semaphoreHandlerTable[MAX_SEM];
 
 // FUNCTIONS
 handleID * createArray();
