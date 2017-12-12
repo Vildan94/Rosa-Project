@@ -249,7 +249,7 @@ handleID ROSA_SemaphoreIPCPCreate ()
 		}
 	}
 		
-	// After checking the whole table and it is full return
+	// After checking the whole table and it is full
 	return -1;
 }
 
