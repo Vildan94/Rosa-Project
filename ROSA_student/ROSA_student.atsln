@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Atmel Studio Solution File, Format Version 11.00
+Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "ROSA_student", "ROSA_student.cproj", "{8511294F-51E3-499C-B671-F9FB7C4BFB77}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|AVR = Debug|AVR
+		Release|AVR = Release|AVR
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8511294F-51E3-499C-B671-F9FB7C4BFB77}.Debug|AVR.ActiveCfg = Debug|AVR
+		{8511294F-51E3-499C-B671-F9FB7C4BFB77}.Debug|AVR.Build.0 = Debug|AVR
+		{8511294F-51E3-499C-B671-F9FB7C4BFB77}.Release|AVR.ActiveCfg = Release|AVR
+		{8511294F-51E3-499C-B671-F9FB7C4BFB77}.Release|AVR.Build.0 = Release|AVR
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
