@@ -9,4 +9,4 @@ extern void contextSave(void);
 extern void contextSaveFromISR(void);
 extern void contextRestoreFromISR(void);
 
-#endif /* rosa_EXT_H_ */
+#endif 

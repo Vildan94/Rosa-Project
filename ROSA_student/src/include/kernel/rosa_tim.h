@@ -4,26 +4,27 @@
 #include <avr32/io.h>
 #include "stdbool.h"
 
-//typedef unsigned long long TimerTick;
-#define TimerTick unsigned long long
-#define TIMERTICK_MAXVAL 0xFFFFFFFFFFFFFFFE
-
+typedef unsigned long long TimerTick;
 TimerTick SystemTime;
+#define TIMERTICK_MAXVAL 0xFFFFFFFFFFFFFFE
 
-TimerTick ROSA_getTimerTicks(void);
-bool ROSA_DelayUntil(TimerTick * lastWakeTime, TimerTick period);
-bool ROSA_Delay(TimerTick ticks);
-
-
-
+/***********************************************************
+ * Kernel timer functions
+ ***********************************************************/
 extern void timerInit(unsigned int);
 extern void timerReset(void);
 extern void timerStart(void);
 extern void timerStop(void);
+bool ROSA_Delay(TimerTick ticks);
+bool ROSA_DelayUntil(TimerTick * lastWakeTime, TimerTick period);
+TimerTick ROSA_getTickTime(void);
+
+
 
 //The timer interrupt service routine
 void timerISR(void);
 extern void timerClearInterrupt(void);
+
 
 //Timer period functions
 int timerPeriodSet(unsigned int ms);
@@ -34,4 +35,4 @@ extern void timerRCSet(int);
 extern int timerPrescale;
 extern int timerRC;
 
-#endif 
+#endif /* _ROSA_TIMER_H_ */

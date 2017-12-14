@@ -2,7 +2,7 @@
 #define rosa_def_H_
 
 #include "rosa_config.h"
-#include "rosa_tim.h"
+#include "kernel/rosa_tim.h"
 
 #ifndef NULL
 #define NULL 0
@@ -10,12 +10,7 @@
 
 typedef struct tcb_record_t {
 	struct tcb_record_t * nexttcb;
-	int priority;			//The task priority
-	int handleID;			//The task handle ID
-	TimerTick waitUntil;    //Waiting time
-	TimerTick waitSemaphore;//Waiting time for semaphore
 	char id[NAMESIZE];		//The task id/name
-	
 	void (*staddr) (void);	//Start address
 	int *dataarea;			//The stack data area
 	int datasize;			//The stack size
@@ -25,6 +20,11 @@ typedef struct tcb_record_t {
 	int savesr;				//The current status register
 	int retaddr;			//The return address
 	int savereg[15];		//The CPU registers
+	
+	TimerTick waitUntil;
+	TimerTick waitSemaphore;
+	int priority;
+	int handleID;	
 } tcb;
 
 #endif 

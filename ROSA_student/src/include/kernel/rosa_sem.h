@@ -1,3 +1,8 @@
+#ifndef _ROSA_SEM_H_
+#define _ROSA_SEM_H_
+
+#include <avr32/io.h>
+
 //Kernel includes
 #include "kernel/rosa_ker.h"
 #include "kernel/rosa_int.h"
@@ -17,6 +22,9 @@
 
 #define Taken 1
 #define Free 0
+#define MAX_SEM 50
+
+
 
 struct semaphore {
 	int ceil;
@@ -29,16 +37,20 @@ struct semaphore {
 typedef struct semaphore Semaphore;
 typedef Semaphore * semaphoreHandler;
 
-typedef unsigned long long timerTick;
+
 typedef int handleID;
+
+semaphoreHandler semaphoreHandlerTable[MAX_SEM];
 
 // FUNCTIONS
 handleID * createArray();
-handleID ROSA SemaphoreBinaryCreate();
-bool ROSA SemaphoreBinaryTake(handleID ID, timerTick ticksToWait);
-bool ROSA SemaphoreBinaryRelease (handleID ID);
-bool ROSA SemaphoreDelete (handleID ID);
-void ROSA SemaphoreCeil (handleID ID, tcb *tcbtask);
-handleID ROSA SemaphoreIPCPCreate ();
-bool ROSA SemaphoreIPCPTake (handleID ID, timerTick ticksToWait);
-bool ROSA SemaphoreIPCPRelease (handleID ID);
+handleID ROSA_SemaphoreBinaryCreate();
+bool ROSA_SemaphoreBinaryTake(handleID ID, TimerTick ticksToWait);
+bool ROSA_SemaphoreBinaryRelease (handleID ID);
+bool ROSA_SemaphoreDelete (handleID ID);
+void ROSA_SemaphoreCeil (handleID ID, tcb *tcbtask);
+handleID ROSA_SemaphoreIPCPCreate ();
+bool ROSA_SemaphoreIPCPTake (handleID ID, TimerTick ticksToWait);
+bool ROSA_SemaphoreIPCPRelease (handleID ID);
+
+#endif /* _ROSA_SEM_H_ */
