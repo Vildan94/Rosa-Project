@@ -24,7 +24,7 @@ typedef struct tcb_record_t {
 	TimerTick waitUntil;
 	TimerTick waitSemaphore;
 	int priority;
-	int handleID;	
+	int HandleID;	
 } tcb;
 
 #endif 

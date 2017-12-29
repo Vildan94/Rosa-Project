@@ -6,7 +6,7 @@
 
 typedef unsigned long long TimerTick;
 TimerTick SystemTime;
-#define TIMERTICK_MAXVAL 0xFFFFFFFFFFFFFFE
+#define TIMERTICK_MAXVAL 0xFFFFFFFFFFFFFFFE
 
 /***********************************************************
  * Kernel timer functions

@@ -10,23 +10,35 @@
 #include "stdlib.h"
 #include "stdbool.h"
 
-#define MAX 21
+#define MAX_NR_TASK 21
 #define IDLE_STACK_SIZE 0x40
+
 
 //Array for the HandleIDs used by Task Create function when returning ID
 // Index represents the ID!!!
-tcb * TaskHandleID[MAX]={NULL}; // Initialize all array's fields to NULL
+tcb * TaskHandleID[MAX_NR_TASK]={NULL}; // Initialize all array's fields to NULL
 tcb *READY;
 tcb *BLOCKED;
 tcb *WAITING;
 tcb *SUSPENDED;
 tcb * EXECTASK;
 tcb *TCBLIST;
-tcb *new_tcb = NULL;
-int *stackData;
+
+
+bool Search_Queue(tcb *Queue,int HandleId);
 
 void Idle_Task(void){
 	while(1){
+		if (TaskHandleID[0]->priority==HIGHEST_PRIORITY){
+			TimerTick FirstWake=ROSA_getTickTime();
+			while(1){
+				if(SystemTime>FirstWake+3600000)
+				break;
+				if(isButton(PUSH_BUTTON_0)==0)
+				break;
+			}
+		}	
+		
 	}
 }
 void ROSA_init(void)
@@ -47,7 +59,40 @@ void ROSA_init(void)
 	timerInit(TIMER_RESOLUTION);
 	interruptInit();
 	timerStart();
-	ROSA_TaskCreate("IDLE",Idle_Task,IDLE_STACK_SIZE,IDLE_PRIORITY);
+	Create_Idle();
+}
+void Create_Idle(){
+	tcb *new_tcb = NULL;							// If task is IDLE
+	int *stackData=NULL;
+	new_tcb = (tcb*)malloc(sizeof(tcb));
+	if(new_tcb==NULL)
+	return -1;
+		
+	stackData=malloc(IDLE_STACK_SIZE*sizeof(int));
+	if (stackData==NULL){
+		free(new_tcb);
+		return -1;
+	}
+			
+	new_tcb->HandleID = 0;																// Handle ID will be 0
+	TaskHandleID[0] = new_tcb;												     	// The task id/name created for debugging purposes
+	new_tcb ->id[0] = "I";
+	
+	new_tcb->priority = 0;														// The task priority
+				
+	new_tcb->nexttcb = NULL;															// Don't link this TCB anywhere yet.
+	new_tcb->staddr = *Idle_Task;														// start address
+				
+	new_tcb->retaddr = (int)Idle_Task;												// return address it must be integer
+	new_tcb->datasize = IDLE_STACK_SIZE;														// Size of stack
+	new_tcb->dataarea = stackData + IDLE_STACK_SIZE ;										    // Stack data area
+				
+	new_tcb->saveusp = new_tcb -> dataarea;												// Current stack position
+	new_tcb->savesr = ROSA_INITIALSR;
+	new_tcb->waitSemaphore=0;
+	new_tcb->waitUntil=0;
+	contextInit(new_tcb);																// Initialize context.
+	Insert_Ready(new_tcb);																// store task to the ready queue
 }
 void ROSA_tcbCreate(tcb * tcbTask, char tcbName[NAMESIZE], void *tcbFunction, int * tcbStack, int tcbStackSize,int priority)
 {
@@ -98,50 +143,6 @@ void ROSA_tcbInstall(tcb * tcbTask)
 		tcbTask->nexttcb = TCBLIST;			//Make the list circular
 	}
 }
-//int ROSA_TaskCreate (char ID[NAMESIZE], void *functionPtr, int stackSize, int priority){
-	//int i, j=0;	
-	//if (priority >= 0 && priority < 20) {											    // priority must be between 0 to 21 not including these two numbers
-		//
-		//new_tcb = (tcb*)malloc(sizeof(tcb));
-		//stackData=malloc(stackSize*sizeof(stackSize));
-		//for (i=0; i < NAMESIZE; i++){												     	// The task id/name created for debugging purposes
-			//new_tcb ->id[i] = ID[i];
-		//}
-		//new_tcb->priority = priority;														// The task priority
-		//
-		//new_tcb->nexttcb = NULL;															// Don't link this TCB anywhere yet.
-		//new_tcb->staddr = functionPtr;														// start address
-		//
-		//new_tcb->retaddr = (int)functionPtr;												// return address it must be integer
-		//new_tcb->datasize = stackSize;														// Size of stack
-		//new_tcb->dataarea = stackData + stackSize ;										    // Stack data area
-		//
-		//new_tcb->saveusp = new_tcb -> dataarea;												// Current stack position
-		//new_tcb->savesr = ROSA_INITIALSR;
-		//new_tcb->waitSemaphore=0;
-		//new_tcb->waitUntil=0;
-													//// Put the initial value of the status register to current status register
-		//// Pointer to the structure of task (tcb)
-		////// HANDLE ID
-		//while (j < MAX){
-			//// If it is empty																	// Check if some array's field is empty or not
-			//if (TaskHandleID[j]==NULL){
-				//new_tcb->handleID = j;
-				//TaskHandleID[j] = new_tcb;
-				//break;
-			//}
-			//else
-			//j++;
-			//// WHAT IF all fields are full
-		//}
-		//contextInit(new_tcb);																// Initialize context.
-		//Insert_Ready(new_tcb);																// store task to the ready queue
-		//return new_tcb->handleID;
-	//}
-	//else {
-		//return -1;																			// Error occurred- not possible to create task
-	//}
-//}
 bool ROSA_TaskSusspend(int HandleId){
 	Insert_Supsended(HandleId);
 	return true;
@@ -152,138 +153,110 @@ bool ROSA_TaskResume(int HandleId){
 }
 int ROSA_TaskCreate (char ID[NAMESIZE], void *functionPtr, int stackSize, int priority){
 	int i, j=1;
+	tcb *new_tcb = NULL;
+	int *stackData=NULL;
 	
-	if(priority >= 0 && priority <= 20 ){
-		if(ID == "IDLE"){																		// If task is IDLE
-			new_tcb->handleID = 0;																// Handle ID will be 0
+	if(priority <= 0 || priority > 20 )	//if invalid prio, exit
+		return -1;
+		
+	if(stackSize<=0)
+		return -1;
+							
+	new_tcb = (tcb*)malloc(sizeof(tcb));
+	if(new_tcb==NULL)
+		return -1;
+	
+	stackData = malloc(stackSize*sizeof(int));
+	if(stackData==NULL){
+		free(new_tcb);
+		return -1;
+	}
+	for (i=0; i < NAMESIZE; i++){												     	// The task id/name created for debugging purposes
+		new_tcb ->id[i] = ID[i];
+	}
+	new_tcb->priority = priority;														// The task priority
+		
+	new_tcb->nexttcb = NULL;															// Don't link this TCB anywhere yet.
+	new_tcb->staddr = functionPtr;														// start address
+		
+	new_tcb->retaddr = (int)functionPtr;												// return address it must be integer
+	new_tcb->datasize = stackSize;														// Size of stack
+	new_tcb->dataarea = stackData + stackSize ;										    // Stack data area
+		
+	new_tcb->saveusp = new_tcb -> dataarea;												// Current stack position
+	new_tcb->savesr = ROSA_INITIALSR;
+	new_tcb->waitSemaphore=0;
+	new_tcb->waitUntil=0;
+		
+	while (j < MAX_NR_TASK){																	// Check if some array's field is empty or not
+		if (TaskHandleID[j]==NULL){
+			new_tcb->HandleID = j;
 			TaskHandleID[j] = new_tcb;
-			
-			new_tcb = (tcb*)malloc(sizeof(tcb));
-			stackData=malloc(stackSize*sizeof(stackSize));
-			for (i=0; i < NAMESIZE; i++){												     	// The task id/name created for debugging purposes
-				new_tcb ->id[i] = ID[i];
-			}
-			new_tcb->priority = priority;														// The task priority
-			
-			new_tcb->nexttcb = NULL;															// Don't link this TCB anywhere yet.
-			new_tcb->staddr = functionPtr;														// start address
-			
-			new_tcb->retaddr = (int)functionPtr;												// return address it must be integer
-			new_tcb->datasize = stackSize;														// Size of stack
-			new_tcb->dataarea = stackData + stackSize ;										    // Stack data area
-			
-			new_tcb->saveusp = new_tcb -> dataarea;												// Current stack position
-			new_tcb->savesr = ROSA_INITIALSR;
-			new_tcb->waitSemaphore=0;
-			new_tcb->waitUntil=0;
-			contextInit(new_tcb);																// Initialize context.
-			Insert_Ready(new_tcb);																// store task to the ready queue
-			return new_tcb->handleID;
+			break;
 		}
-		
-		new_tcb = (tcb*)malloc(sizeof(tcb));
-		stackData=malloc(stackSize*sizeof(stackSize));
-		for (i=0; i < NAMESIZE; i++){												     	// The task id/name created for debugging purposes
-			new_tcb ->id[i] = ID[i];
-		}
-		new_tcb->priority = priority;														// The task priority
-		
-		new_tcb->nexttcb = NULL;															// Don't link this TCB anywhere yet.
-		new_tcb->staddr = functionPtr;														// start address
-		
-		new_tcb->retaddr = (int)functionPtr;												// return address it must be integer
-		new_tcb->datasize = stackSize;														// Size of stack
-		new_tcb->dataarea = stackData + stackSize ;										    // Stack data area
-		
-		new_tcb->saveusp = new_tcb -> dataarea;												// Current stack position
-		new_tcb->savesr = ROSA_INITIALSR;
-		new_tcb->waitSemaphore=0;
-		new_tcb->waitUntil=0;
-		
-		while (j < MAX){																	// Check if some array's field is empty or not
-			if (TaskHandleID[j]==NULL){
-				new_tcb->handleID = j;
-				TaskHandleID[j] = new_tcb;
-				break;
-			}
-			else
-			j++;
-		}
-		contextInit(new_tcb);																	// Initialize context.
-		Insert_Ready(new_tcb);																	// store task to the ready queue
-		return new_tcb->handleID;
+		else
+		j++;
 	}
-	else {
-		return -1;																				// Error occurred- not possible to create task
-	}
+	if(j==MAX_NR_TASK)
+	return -1;
 	
+	contextInit(new_tcb);																	// Initialize context.
+	Insert_Ready(new_tcb);																	// store task to the ready queue
+	return new_tcb->HandleID;	
 }
-bool ROSA_TaskDelete(int HandleId){
-	tcb *TEMP= READY; 
+
+bool ROSA_TaskDelete(int HandleId){	
+	if(HandleId<1 || HandleId>20)
+	return false;	
+	
+	if(TaskHandleID[HandleId]==NULL)
+	return true;
+	
 	// If executing task tries to delete itself
-	if (EXECTASK->handleID == HandleId){		
-		TaskHandleID[HandleId] = NULL;
-		free(EXECTASK);
-		ROSA_yield();
+	if (EXECTASK->HandleID == HandleId ){
+		interruptDisable();
+		TaskHandleID[HandleId] = NULL;				// free space in array handle ID
+		free(EXECTASK->dataarea-EXECTASK->datasize);				    // deallocate stack
+		free(EXECTASK);								// deallocate task structure
+		interruptEnable();
+		ROSA_yield();								// it takes next task from ready queue
 		return true;
 	}
-	//// READY	
-	//while (TEMP != NULL ){
-		//if (TEMP->handleID == HandleId){
-			//TaskHandleID[HandleId] = NULL;
-			//free(TEMP);
-			//ROSA_yield();
-			//return true;
-		//}
-		//TEMP = TEMP->nexttcb;
-	//}
-	////// WAITING
-	//tcb *PREVIOUS = WAITING; 
-	//TEMP = WAITING;
-	//while (TEMP != NULL ){
-		//if (TEMP->handleID == HandleId){
-			//TaskHandleID[HandleId] = NULL;
-			//PREVIOUS->nexttcb = TEMP->nexttcb;
-			//free(TEMP);
-			//TEMP->nexttcb = NULL;
-			//TEMP = NULL;
-			//ROSA_yield();
-			//return true;
-		//}
-		//PREVIOUS = TEMP;
-		//TEMP = TEMP->nexttcb;
-	//}
-	//////// Blocked
-	//////TEMP = BLOCKED;
-	//////while (TEMP != NULL ){
-		//////if (TEMP->handleID == HandleId){
-			//////while(j < MAX){
-				//////if (j == HandleId){
-				//////TaskHandleID[HandleId] = NULL;
-					//////break;
-				//////}
-				//////else{
-					//////j++;
-				//////}
-			//////}
-			//////free(TEMP);
-			//////scheduler();
-			//////contextRestore();
-			//////return true;
-			////////temp = 1;
-		//////}
-		//////TEMP = TEMP->nexttcb;
-	//////}
-	////// SUSPENDED
-	//TEMP = SUSPENDED;
-	//while (TEMP != NULL ){
-		//if (TEMP->handleID == HandleId){
-			//TaskHandleID[HandleId] = NULL;
-			//free(TEMP);
-			//ROSA_yield();
-			//return true;
-		//}
-		//TEMP = TEMP->nexttcb;
-	//}
+	if(Search_Queue(WAITING, HandleId))
+		return true;
+	if(Search_Queue(READY, HandleId))
+		return true;
+	if(Search_Queue(BLOCKED, HandleId))
+		return true;
+	if(Search_Queue(SUSPENDED, HandleId))
+		return true;
+
+}
+
+bool Search_Queue(tcb *Queue,int HandleId){
+	tcb *PREVIOUS, *TEMP;
+	TEMP = Queue;
+	PREVIOUS = Queue;
+	if(TEMP!=NULL && TEMP->HandleID==HandleId){
+		Queue=TEMP->nexttcb;
+ 		//TaskHandleID[HandleId] = NULL;
+ 		//free(EXECTASK->dataarea-EXECTASK->datasize);
+ 		//free(TEMP);
+		return true;
+	}
+	while (TEMP != NULL ){
+		if (TEMP->HandleID == HandleId){
+			PREVIOUS->nexttcb = TEMP->nexttcb;   // OK
+			interruptDisable();
+			TaskHandleID[HandleId] = NULL;
+			free(TEMP->dataarea-TEMP->datasize);	
+			free(TEMP);
+			interruptEnable();
+			return true;
+		}
+		PREVIOUS = TEMP;
+		TEMP = TEMP->nexttcb;
+	}
+	return false;
 }
 

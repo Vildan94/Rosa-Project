@@ -43,12 +43,12 @@ typedef int handleID;
 semaphoreHandler semaphoreHandlerTable[MAX_SEM];
 
 // FUNCTIONS
-handleID * createArray();
+handleID *createArray();
 handleID ROSA_SemaphoreBinaryCreate();
 bool ROSA_SemaphoreBinaryTake(handleID ID, TimerTick ticksToWait);
 bool ROSA_SemaphoreBinaryRelease (handleID ID);
 bool ROSA_SemaphoreDelete (handleID ID);
-void ROSA_SemaphoreCeil (handleID ID, tcb *tcbtask);
+void ROSA_SemaphoreCeil (handleID ID, int TaskHandle);
 handleID ROSA_SemaphoreIPCPCreate ();
 bool ROSA_SemaphoreIPCPTake (handleID ID, TimerTick ticksToWait);
 bool ROSA_SemaphoreIPCPRelease (handleID ID);

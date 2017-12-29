@@ -40,43 +40,37 @@ int timerPeriodSet(unsigned int ms)
 	return rc * prescale / FOSC0;
 }
 
+
+
 bool ROSA_Delay(TimerTick ticks){
-	TimerTick newWakeTime=0;
-	TimerTick timeUntilOverflow=0;	
-	//CRITICAL SECTION
-	timeUntilOverflow = TIMERTICK_MAXVAL - SystemTime;	
-	if(ticks > timeUntilOverflow){
-		newWakeTime = ticks - timeUntilOverflow;
-	}
-	else{
-		newWakeTime = SystemTime + ticks;	//add delay-length to current time
-	}
-	//END OF CRITICAL SECTION	
-	EXECTASK->waitUntil = newWakeTime;	//Save wake time into task's attribute	
-	Insert_Waiting(EXECTASK);	//Put the task into the Waiting Queue	
+	
+	interruptDisable();
+	
+	if(ticks > TIMERTICK_MAXVAL - SystemTime)
+		EXECTASK->waitUntil = TIMERTICK_MAXVAL;
+	else
+		EXECTASK->waitUntil = SystemTime + ticks;	//add delay-length to current time
+	
+	Insert_Waiting(EXECTASK);	//Put the task into the Waiting Queue
+	
+	interruptEnable();
+	
 	ROSA_yield();		//Call the scheduler (ex: yield)	
 	return true;
 }
 
 bool ROSA_DelayUntil(TimerTick * lastWakeTime, TimerTick period)
 {
-	TimerTick newWakeTime;
-	TimerTick timeUntilOverflow;
+	interruptDisable();
 	
-	//CRITICAL SECTION
-	timeUntilOverflow = TIMERTICK_MAXVAL - *lastWakeTime;
-	
-	if(timeUntilOverflow < period){
-		newWakeTime = period - timeUntilOverflow;
-	}
-	else{
-		newWakeTime = *lastWakeTime + period;	//add delay-length value to current time
-	}
-	//END OF CRITICAL SECTION
-	
-	EXECTASK->waitUntil = newWakeTime;	//Save waking time in the task's attribute
-	
+	if(TIMERTICK_MAXVAL - *lastWakeTime < period)
+		EXECTASK->waitUntil = TIMERTICK_MAXVAL;
+	else
+		EXECTASK->waitUntil = *lastWakeTime + period;	//add delay-length value to current time
+
 	Insert_Waiting(EXECTASK);				//Put the task into the Waiting Queue
+	
+	interruptEnable();
 	
 	ROSA_yield();					//Call the scheduler
 	
@@ -89,3 +83,48 @@ bool ROSA_DelayUntil(TimerTick * lastWakeTime, TimerTick period)
 TimerTick ROSA_getTickTime(void){
 	return SystemTime;	
 }
+
+//bool ROSA_Delay(TimerTick ticks){
+	//TimerTick newWakeTime=0;
+	//TimerTick timeUntilOverflow=0;
+	////CRITICAL SECTION
+	//timeUntilOverflow = TIMERTICK_MAXVAL - SystemTime;
+	//if(ticks > timeUntilOverflow){
+		//newWakeTime = ticks - timeUntilOverflow;
+	//}
+	//else{
+		//newWakeTime = SystemTime + ticks;	//add delay-length to current time
+	//}
+	////END OF CRITICAL SECTION
+	//EXECTASK->waitUntil = newWakeTime;	//Save wake time into task's attribute
+	//Insert_Waiting(EXECTASK);	//Put the task into the Waiting Queue
+	//ROSA_yield();		//Call the scheduler (ex: yield)
+	//return true;
+//}
+//
+//bool ROSA_DelayUntil(TimerTick * lastWakeTime, TimerTick period)
+//{
+	//TimerTick newWakeTime;
+	//TimerTick timeUntilOverflow;
+	//
+	////CRITICAL SECTION
+	//timeUntilOverflow = TIMERTICK_MAXVAL - *lastWakeTime;
+	//
+	//if(timeUntilOverflow < period){
+		//newWakeTime = period - timeUntilOverflow;
+	//}
+	//else{
+		//newWakeTime = *lastWakeTime + period;	//add delay-length value to current time
+	//}
+	////END OF CRITICAL SECTION
+	//
+	//EXECTASK->waitUntil = newWakeTime;	//Save waking time in the task's attribute
+	//
+	//Insert_Waiting(EXECTASK);				//Put the task into the Waiting Queue
+	//
+	//ROSA_yield();					//Call the scheduler
+	//
+	//*lastWakeTime = SystemTime;		//When task gets to execute again, calculate new lastWakeTime value before exciting
+	//
+	//return true;
+//}

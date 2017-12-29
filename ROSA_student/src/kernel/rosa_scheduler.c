@@ -7,6 +7,7 @@ bool ChangeIdleTaskPriorityToLowest(void);
 
 void scheduler(void){	
 	Check_Waiting_Queue();
+	Check_Blocked_Queue();
 	Choose_A_Task_From_Ready_Queue();//If a task is the same prio it goes at the end of the tasks with same prio's
 }
 bool ROSA_Scheduler(void){
@@ -15,15 +16,15 @@ bool ROSA_Scheduler(void){
 	ROSA_start();
 	return true;
 }
-//bool ROSA_SchedulerSuspend(void){
-	////Problem it needs to run only certain amount of time!!! if not it will block the processor indefinitely
-	//if(ChangeIdleTaskPriorityToHighest()){
-		//ROSA_yield();
-		//return true;
-	//}
-	//else
-	//return false;
-//}
+bool ROSA_SchedulerSuspend(void){
+	//Problem it needs to run only certain amount of time!!! if not it will block the processor indefinitely
+	if(ChangeIdleTaskPriorityToHighest()){
+		ROSA_yield();
+		return true;
+	}
+	else
+	return false;
+}
 //bool ROSA_SchedulerResume(void){
 	//if(ChangeIdleTaskPriorityToLowest()){
 		//Insert_Ready(EXECTASK);
@@ -34,11 +35,15 @@ bool ROSA_Scheduler(void){
 	//return false;
 //}
 bool ChangeIdleTaskPriorityToHighest(void){//WONT WORK HOW DO YOU GET OUT FROM TASK?!
+	interruptDisable();
 	TaskHandleID[0]->priority=HIGHEST_PRIORITY;
+	interruptEnable();
 	return true;
 }
 bool ChangeIdleTaskPriorityToLowest(void){
+	interruptDisable();
 	TaskHandleID[0]->priority=IDLE_PRIORITY;
+	interruptEnable();
 	return true;
 }
 void Check_Waiting_Queue(){
@@ -122,20 +127,20 @@ void Insert_Supsended(int handleID){//Order of the elements doesn't matter
 	tcb *Temp=READY, *Previous=READY;
 	
 	//EXECUTING MOVE
-	if(EXECTASK->handleID==handleID){//the executing task wants to suspend itself
+	if(EXECTASK->HandleID==handleID){//the executing task wants to suspend itself
 		EXECTASK->nexttcb=SUSPENDED;
 		SUSPENDED=EXECTASK;
 		ROSA_yield();
 	}
 	
 	//READY SEARCH
-	if(Temp!=NULL && Temp->handleID==handleID){//If it is the first element
+	if(Temp!=NULL && Temp->HandleID==handleID){//If it is the first element
 		READY=Temp->nexttcb;
 		Temp->nexttcb=SUSPENDED;
 		SUSPENDED=Temp;
 	}
 	while(Temp->nexttcb!=NULL){//The rest of the elements
-		if(Temp->nexttcb->handleID==handleID){
+		if(Temp->nexttcb->HandleID==handleID){
 			Temp=Temp->nexttcb;
 			Previous->nexttcb=Temp->nexttcb;
 			Temp->nexttcb=SUSPENDED;
@@ -148,13 +153,13 @@ void Insert_Supsended(int handleID){//Order of the elements doesn't matter
 	//WAITING QUEUE SEARCH
 	Temp=WAITING;
 	Previous=WAITING;
-	if(Temp!=NULL && Temp->handleID==handleID){//If it is the first element
+	if(Temp!=NULL && Temp->HandleID==handleID){//If it is the first element
 		WAITING=Temp->nexttcb;
 		Temp->nexttcb=SUSPENDED;
 		SUSPENDED=Temp;
 	}
 	while(Temp!=NULL){//The rest of the elements
-		if(Temp->handleID==handleID){
+		if(Temp->HandleID==handleID){
 			Previous->nexttcb=Temp->nexttcb;
 			Temp->nexttcb=SUSPENDED;
 			SUSPENDED=Temp;
@@ -165,34 +170,54 @@ void Insert_Supsended(int handleID){//Order of the elements doesn't matter
 	}
 	
 	////BLOCKED SEARCH
-	//Temp=BLOCKED;
-	//Previous=BLOCKED;
-	//if(Temp!=NULL && Temp->handleID==handleID){//If it is the first element
-		//BLOCKED=Temp->nexttcb;
-		//Temp->nexttcb=SUSPENDED;
-		//SUSPENDED=Temp;
-	//}
-	//while(Temp->nexttcb!=NULL){//The rest of the elements
-		//if(Temp->nexttcb->handleID==handleID){
-			//Temp=Temp->nexttcb;
-			//Previous->nexttcb=Temp->nexttcb;
-			//Temp->nexttcb=SUSPENDED;
-			//SUSPENDED=Temp;
-			//return;
-		//}
-		//Temp=Temp->nexttcb;
-	//}
+	Temp=BLOCKED;
+	Previous=BLOCKED;
+	if(Temp!=NULL && Temp->HandleID==handleID){//If it is the first element
+		BLOCKED=Temp->nexttcb;
+		Temp->nexttcb=SUSPENDED;
+		SUSPENDED=Temp;
+	}
+	while(Temp->nexttcb!=NULL){//The rest of the elements
+		if(Temp->nexttcb->HandleID==handleID){
+			Temp=Temp->nexttcb;
+			Previous->nexttcb=Temp->nexttcb;
+			Temp->nexttcb=SUSPENDED;
+			SUSPENDED=Temp;
+			return;
+		}
+		Temp=Temp->nexttcb;
+	}
 }
 void Resume_Suspended(int handleID){
 	//It needs return type (FALSE) if user tries to resume a task that isn't suspended
 	tcb *Temp=SUSPENDED, *Previous=SUSPENDED;
 	while(Temp!=NULL){
-		if(Temp->handleID==handleID){
+		if(Temp->HandleID==handleID){
 			Previous->nexttcb=Temp->nexttcb;
 			Insert_Ready(Temp);
 			return;
 		}
 		Previous=Temp;
+		Temp=Temp->nexttcb;
+	}
+}
+
+void Insert_Blocked(tcb* Task){
+	Task->nexttcb=BLOCKED;
+	BLOCKED=Task;
+}
+
+void Check_Blocked_Queue(){
+	tcb *Temp=BLOCKED, *Previous=BLOCKED;
+	//Travers the whole list
+	while(Temp!=NULL){
+		if(Temp->waitSemaphore){
+			Temp=Temp->nexttcb;
+			Previous->nexttcb=Temp->nexttcb;
+			Temp->nexttcb=SUSPENDED;
+			SUSPENDED=Temp;
+			return;
+		}
 		Temp=Temp->nexttcb;
 	}
 }
